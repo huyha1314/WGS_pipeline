@@ -1,0 +1,97 @@
+[workspace]
+authors = ["huyha1314 <hagiahuy311@gmail.com>"]
+channels = ["conda-forge", "bioconda"]
+name = "suran_sal"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+# --- GLOBAL UTILITIES ---
+[dependencies]
+python = ">=3.10"
+aria2 = ">=1.37.0"
+parallel = ">=20260422,<20260423"
+pigz = "*"
+
+# --- CONFIGURABLE TASKS ---
+[tasks]
+# Utility to create sample sheet
+create-sheet = "python script/create_samples_sheet.py"
+run-pipeline-local = "./script/11.masterworkflow_local.sh"
+
+# Database download tasks using aria2c for maximum speed
+download-db-gtdbtk = "mkdir -p /worker_data1/huyha/db/gtdbtk && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/gtdbtk -o gtdbtk_data.tar.gz https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz && tar -xvzf /worker_data1/huyha/db/gtdbtk/gtdbtk_data.tar.gz -C /worker_data1/huyha/db/gtdbtk --strip-components=1 && rm /worker_data1/huyha/db/gtdbtk/gtdbtk_data.tar.gz"
+download-db-checkv = "mkdir -p /worker_data1/huyha/db/checkv && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/checkv -o checkv-db-v1.5.tar.gz https://portal.nersc.gov/CheckV/checkv-db-v1.5.tar.gz && tar -xvzf /worker_data1/huyha/db/checkv/checkv-db-v1.5.tar.gz -C /worker_data1/huyha/db/checkv && rm /worker_data1/huyha/db/checkv/checkv-db-v1.5.tar.gz"
+download-db-bakta = "mkdir -p /worker_data1/huyha/db/bakta && pixi run -e annotation bakta_db download -o /worker_data1/huyha/db/bakta"
+download-db-checkm = "mkdir -p /worker_data1/huyha/db/checkm && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/checkm -o checkm_data.tar.gz https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz && tar -xvzf /worker_data1/huyha/db/checkm/checkm_data.tar.gz -C /worker_data1/huyha/db/checkm && rm /worker_data1/huyha/db/checkm/checkm_data.tar.gz && pixi run -e taxonomy checkm data setRoot /worker_data1/huyha/db/checkm"
+download-db-genomad = "mkdir -p /worker_data1/huyha/db/genomad && pixi run -e plasmid genomad download-database /worker_data1/huyha/db/genomad"
+download-db-eggnog = "mkdir -p /worker_data1/huyha/db/eggnog && cd /worker_data1/huyha/db/eggnog && aria2c -c -x 16 -s 16 --lowest-speed-limit=10K http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz && aria2c -c -x 16 -s 16 --lowest-speed-limit=10K http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz && aria2c -c -x 16 -s 16 --lowest-speed-limit=10K http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz && echo 'Decompressing databases...' && gunzip -f eggnog.db.gz && tar -zxf eggnog.taxa.tar.gz && rm eggnog.taxa.tar.gz && gunzip -f eggnog_proteins.dmnd.gz"
+download-db-kraken2 = "mkdir -p /worker_data1/huyha/db/kraken2 && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/kraken2 -o k2_pluspf.tar.gz https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20260226.tar.gz && tar -xvzf /worker_data1/huyha/db/kraken2/k2_pluspf.tar.gz -C /worker_data1/huyha/db/kraken2 && rm /worker_data1/huyha/db/kraken2/k2_pluspf.tar.gz"
+download-db-magpurify = "mkdir -p /worker_data1/huyha/db/magpurify && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/magpurify -o MAGpurify-db-v1.0.tar.bz2 https://zenodo.org/records/3688811/files/MAGpurify-db-v1.0.tar.bz2?download=1 && tar -xvjf /worker_data1/huyha/db/magpurify/MAGpurify-db-v1.0.tar.bz2 -C /worker_data1/huyha/db/magpurify --strip-components=1 && rm /worker_data1/huyha/db/magpurify/MAGpurify-db-v1.0.tar.bz2"
+
+# --- FEATURES ---
+[feature.qc.dependencies]
+fastp = ">=0.23"
+bbmap = ">=39.0"
+
+[feature.assembly.dependencies]
+spades = ">=4.0"
+flye = ">=2.9"
+megahit = ">=1.2.9"
+pilon = ">=1.24"
+samtools = ">=1.19"
+bowtie2 = ">=2.5"
+bwa = ">=0.7.17"
+openjdk = ">=17"
+
+[feature.sspace.dependencies]
+sspace_basic = ">=2.1.1"
+
+[feature.statistics.dependencies]
+quast = ">=5.2"
+busco = ">=6.0"
+diamond = ">=2.1.21,<2.2.0"
+
+[feature.annotation.dependencies]
+bakta = ">=1.12.0"
+diamond = ">=2.1.21,<2.2.0"
+
+[feature.plasmid.dependencies]
+genomad = ">=1.8"
+checkv = ">=1.0"
+diamond = ">=2.1.21,<2.2.0"
+
+[feature.functional.dependencies]
+eggnog-mapper = ">=2.1"
+diamond = ">=2.1.21,<2.2.0"
+
+[feature.taxonomy.dependencies]
+checkm-genome = ">=1.2"
+gtdbtk = ">=2.7.2"
+setuptools = "<82"
+metabat2 = ">=2.18_23_gc869c52,<3"
+
+[feature.tree.dependencies]
+iqtree = ">=2.2"
+kraken2 = ">=2.1"
+krakentools = ">=1.2"
+ncbi-datasets-cli = "*"
+
+[feature.report.dependencies]
+quarto = ">=1.3"
+
+[feature.magpurify.dependencies]
+magpurify = ">=2.1.2"
+
+# --- ENVIRONMENTS ---
+[environments]
+qc = ["qc"]
+assembly = ["assembly"]
+sspace = ["sspace"]
+statistics = ["statistics"]
+annotation = ["annotation"]
+plasmid = ["plasmid"]
+functional = ["functional"]
+taxonomy = ["taxonomy"]
+tree = ["tree"]
+report = ["report"]
+magpurify = ["magpurify"]

@@ -1,0 +1,15 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+# results
+results/*
+log/*
+data/*
+busco_downloads/*
+rp/*
+*.txt
+*.qmd
+*.pdf
+*.log
+*.tsv
