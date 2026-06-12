@@ -1,4 +1,4 @@
-# Bacterial WGS Analysis Pipeline (`suran_sal`)
+# Bacterial WGS Analysis Pipeline 
 
 A modern, reproducible, and configuration-driven bacterial Whole Genome Sequencing (WGS) pipeline orchestrated with **Pixi** and **SLURM**.
 
