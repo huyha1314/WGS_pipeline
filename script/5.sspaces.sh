@@ -44,6 +44,12 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
     
     # Check if finished
     final_output="${WORK_DIR}/${SAMPLE}_sspace.final.scaffolds.fasta"
+    if [[ "$RUN_SCAFFOLDING" != "true" ]]; then
+        echo "Scaffolding is disabled (RUN_SCAFFOLDING=false). Forwarding contigs directly..."
+        cp "$contigs_in" "$final_output"
+        continue
+    fi
+
     if [[ -s "$final_output" ]]; then
         echo "Skipping $SAMPLE (SSPACE already completed)"
         continue

@@ -16,7 +16,9 @@ option_list = list(
   make_option(c("-o", "--output"), type="character", default="final_tree_plot",
               help="Output file prefix (without extension)", metavar="STRING"),
   make_option(c("-r", "--root"), type="character", default=NULL,
-              help="Exact name of the outgroup tip to root the tree.", metavar="STRING")
+              help="Exact name of the outgroup tip to root the tree.", metavar="STRING"),
+  make_option(c("-g", "--gtdbtk"), type="character", default=NULL,
+              help="Path to GTDB-Tk classification summary file (tab-separated)", metavar="FILE")
 )
 
 opt_parser = OptionParser(option_list=option_list)
@@ -44,6 +46,54 @@ if (!is.null(opt$root)) {
 }
 
 cat("=== 3. Generating Plot ===\n")
+
+# Identify bins
+collected_dir <- file.path(dirname(dirname(opt$input)), "collected_assemblies")
+bin_names <- c()
+if (dir.exists(collected_dir)) {
+    bin_files <- list.files(collected_dir, pattern="\\.fasta$")
+    bin_names <- gsub("\\.fasta$", "", bin_files)
+    bin_names <- bin_names[!grepl("_original", bin_names)]
+}
+
+# Rename tips using GTDB-Tk classifications if available
+highlight_labels <- bin_names
+if (!is.null(opt$gtdbtk) && file.exists(opt$gtdbtk)) {
+    cat("=== Mapping GTDB-Tk species names to tree tips ===\n")
+    gtdb_df <- read.delim(opt$gtdbtk, sep="\t", header=TRUE, stringsAsFactors=FALSE)
+    
+    extract_species <- function(classification_str) {
+      parts <- strsplit(classification_str, ";")[[1]]
+      species_part <- parts[grep("^s__", parts)]
+      if (length(species_part) > 0) {
+        species_name <- gsub("^s__", "", species_part)
+        if (species_name != "" && species_name != "unclassified") {
+          return(species_name)
+        }
+      }
+      genus_part <- parts[grep("^g__", parts)]
+      if (length(genus_part) > 0) {
+        genus_name <- gsub("^g__", "", genus_part)
+        return(paste0(genus_name, " sp."))
+      }
+      return("Unclassified Bacteria")
+    }
+    
+    for (i in seq_along(tree$tip.label)) {
+        tip <- tree$tip.label[i]
+        matched_row <- gtdb_df[gtdb_df$user_genome == tip, ]
+        if (nrow(matched_row) > 0) {
+            species_name <- extract_species(matched_row$classification[1])
+            new_label <- paste0(tip, " (", species_name, ")")
+            cat(" -> Renaming tip:", tip, "->", new_label, "\n")
+            tree$tip.label[i] <- new_label
+            if (tip %in% bin_names) {
+                highlight_labels <- c(highlight_labels, new_label)
+            }
+        }
+    }
+}
+
 # Calculate max distance to dynamically extend x-axis
 max_dist <- max(node.depth.edgelength(tree))
 
@@ -56,13 +106,9 @@ p <- ggtree(tree, size=0.8) +
   xlim(0, max_dist * 3.5) 
 
 # Highlight our bins in red
-collected_dir <- file.path(dirname(dirname(opt$input)), "collected_assemblies")
-if (dir.exists(collected_dir)) {
-    bin_files <- list.files(collected_dir, pattern="\\.fasta$")
-    bin_names <- gsub("\\.fasta$", "", bin_files)
-    bin_names <- bin_names[!grepl("_original", bin_names)]
-    cat("Highlighting our bins in red:", paste(bin_names, collapse=", "), "\n")
-    p <- p + geom_tippoint(aes(subset=(label %in% bin_names)), size=4, color="red")
+if (length(highlight_labels) > 0) {
+    cat("Highlighting our bins in red:", paste(highlight_labels, collapse=", "), "\n")
+    p <- p + geom_tippoint(aes(subset=(label %in% highlight_labels)), size=4, color="red")
 }
 
 cat("=== 4. Saving Outputs ===\n")

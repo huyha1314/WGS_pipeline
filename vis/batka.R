@@ -200,7 +200,13 @@ gene_table <- datatable(
   gene_display_df, 
   rownames = FALSE, 
   filter = 'top',
-  options = list(pageLength = 10, autoWidth = TRUE, dom = 'ftip'),
+  extensions = 'Buttons',
+  options = list(
+    pageLength = 10, 
+    autoWidth = TRUE, 
+    dom = 'Bftip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+  ),
   class = 'cell-border stripe hover'
 )
 

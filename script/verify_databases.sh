@@ -142,10 +142,8 @@ fi
 
 # 3. CheckV
 if [ -d "$CHECKV_DB_PATH" ]; then
-    if [ -d "$CHECKV_DB_PATH/checkv-db-v1.5/genome_db" ] && [ -d "$CHECKV_DB_PATH/checkv-db-v1.5/hmm_db" ]; then
+    if [ -d "$CHECKV_DB_PATH/genome_db" ] && [ -d "$CHECKV_DB_PATH/hmm_db" ]; then
         print_status "CheckV" "READY"
-    elif [ -f "$CHECKV_DB_PATH/checkv-db-v1.5.tar.gz" ]; then
-        print_status "CheckV" "INCOMPLETE" "Downloaded archive exists but is not extracted."
     else
         print_status "CheckV" "MISSING" "Directory exists but subdirectories are missing."
     fi
@@ -171,7 +169,7 @@ fi
 
 # 5. geNomad
 if [ -d "$GENOMAD_DB_PATH" ]; then
-    if [ -f "$GENOMAD_DB_PATH/genomad_db/genomad_db" ] && [ -f "$GENOMAD_DB_PATH/genomad_db/version.txt" ]; then
+    if [ -f "$GENOMAD_DB_PATH/genomad_db" ] && [ -f "$GENOMAD_DB_PATH/version.txt" ]; then
         print_status "geNomad" "READY"
     else
         print_status "geNomad" "MISSING" "Directory exists but genomad_db files are missing."
@@ -240,6 +238,46 @@ if [ -d "$MAGPURIFYDB" ]; then
     fi
 else
     print_status "MAGpurify" "MISSING" "Run: pixi run download-db-magpurify"
+fi
+
+# 10. ABRicate (AMR & Virulence)
+if [ -d "$ABRICATE_DB_DIR" ]; then
+    if [ -d "$ABRICATE_DB_DIR/card" ] && [ -d "$ABRICATE_DB_DIR/resfinder" ] && [ -d "$ABRICATE_DB_DIR/vfdb" ]; then
+        print_status "ABRicate" "READY"
+    else
+        print_status "ABRicate" "MISSING" "Directory exists but CARD, ResFinder, or VFDB is missing. Run: pixi run download-db-amr-virulence"
+    fi
+else
+    print_status "ABRicate" "MISSING" "Run: pixi run download-db-amr-virulence"
+fi
+
+# 11. antiSMASH
+if [ -d "$ANTISMASH_DB_DIR" ]; then
+    if [ -d "$ANTISMASH_DB_DIR/pfam" ] || [ -n "$(ls -A "$ANTISMASH_DB_DIR" 2>/dev/null)" ]; then
+        print_status "antiSMASH" "READY"
+    else
+        print_status "antiSMASH" "MISSING" "Directory is empty. Run: pixi run download-db-secondary-metabolites"
+    fi
+else
+    print_status "antiSMASH" "MISSING" "Run: pixi run download-db-secondary-metabolites"
+fi
+
+# 12. BAGEL4
+if [ -d "$BAGEL4_DIR" ] && [ -d "$BAGEL4_DB_DIR" ]; then
+    if [ -f "$BAGEL4_DIR/bagel4_wrapper.pl" ] && [ -f "$BAGEL4_DB_DIR/Pfam-A.hmm" ] && [ -f "$BAGEL4_DB_DIR/Pfam-A.hmm.h3m" ]; then
+        print_status "BAGEL4" "READY"
+    else
+        print_status "BAGEL4" "MISSING" "Codebase or Pfam-A databases missing/unindexed. Run: pixi run download-db-secondary-metabolites"
+    fi
+else
+    print_status "BAGEL4" "MISSING" "Run: pixi run download-db-secondary-metabolites"
+fi
+
+# 13. RGI (CARD)
+if [ -d "$RGI_DB_DIR" ] && [ -f "$RGI_DB_DIR/card.json" ]; then
+    print_status "RGI" "READY"
+else
+    print_status "RGI" "MISSING" "Run: pixi run download-db-amr-virulence"
 fi
 
 echo -e "======================================================================"

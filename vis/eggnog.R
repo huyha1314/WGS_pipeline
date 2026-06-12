@@ -163,4 +163,29 @@ tryCatch({
   saveWidget(interactive_plot, file = file.path(opt$outdir, "02_Top50_KEGG_Plot_Interactive.html"))
 }, error = function(e) { message("  [Skipping HTML] for KEGG plot") })
 
+# --- D. KEGG Treemap Visualization (Highly Professional) ---
+tryCatch({
+  # We need a root node for Plotly treemaps
+  treemap_data <- top_50 %>%
+    mutate(Parent = "Top KEGG Pathways")
+  
+  # Add the root node itself
+  root_node <- data.frame(Pathway_Name = "Top KEGG Pathways", Count = sum(top_50$Count), Parent = "", Clean_ID = "", Final_Name = "", Label = "")
+  treemap_data <- bind_rows(root_node, treemap_data)
+  
+  p_treemap <- plot_ly(
+    data = treemap_data,
+    type = "treemap",
+    labels = ~Pathway_Name,
+    parents = ~Parent,
+    values = ~Count,
+    textinfo = "label+value",
+    hoverinfo = "label+value+percent root",
+    marker = list(colorscale = 'YlGnBu')
+  ) %>% layout(title = "Metabolic Pathway Distribution (Treemap)", margin = list(l=0, r=0, b=0, t=30))
+  
+  saveWidget(p_treemap, file = file.path(opt$outdir, "03_KEGG_Treemap.html"))
+  message("  -> Generated professional KEGG Treemap.")
+}, error = function(e) { message("  [Skipping Treemap] error occurred: ", e$message) })
+
 message(paste("\nDone! All reports successfully saved to:", opt$outdir))

@@ -10,7 +10,7 @@ mkdir -p "$LOCAL_LOG_DIR"
 TIMELINE_FILE="$LOCAL_LOG_DIR/timeline.log"
 
 echo "====================================================="
-echo "  PRECISIONGENE WGS PIPELINE - LOCAL SEQUENTIAL RUN  "
+echo "  PRECISIONGENE WGS PIPELINE - LOCAL DOWNSTREAM RUN  "
 echo "====================================================="
 echo "Configured Workspace: $WORKDIR"
 echo "Results Directory:    $RESULT_DIR"
@@ -21,13 +21,12 @@ echo "====================================================="
 
 # Initialize timeline log header
 echo "=====================================================" >> "$TIMELINE_FILE"
-echo "   WGS PIPELINE RUN - $(date '+%Y-%m-%d %H:%M:%S')" >> "$TIMELINE_FILE"
+echo "   WGS PIPELINE DOWNSTREAM RUN - $(date '+%Y-%m-%d %H:%M:%S')" >> "$TIMELINE_FILE"
 echo "=====================================================" >> "$TIMELINE_FILE"
 
 # Check if samples sheet exists
 if [[ ! -f "$INPUT_SHEET" ]]; then
     echo "ERROR: Samples sheet not found at $INPUT_SHEET."
-    echo "Please run 'pixi run create-sheet -i <data_directory>' first to create it."
     exit 1
 fi
 
@@ -40,6 +39,36 @@ if [[ -z "$FIRST_SAMPLE" ]]; then
 fi
 
 echo "First sample in sheet: $FIRST_SAMPLE (used for checkpointing)"
+echo "-----------------------------------------------------"
+
+# --- Reset/Clean Downstream Results (To align with the filtered bins) ---
+echo "Cleaning up old downstream outputs and flag files to match your filtered bins..."
+# Clear success flags so they re-run
+rm -f "$RESULT_DIR/refined_assemblies/magpurify_success.flag"
+rm -f "$RESULT_DIR/checkm_cleaned/checkm_success.flag"
+rm -f "$RESULT_DIR/gtdbtk/gtdbtk_success.flag"
+rm -f "$RESULT_DIR/gtdbtk_cleaned/gtdbtk_success.flag"
+rm -f "$RESULT_DIR/annotation/bakta_success.flag"
+rm -f "$RESULT_DIR/eggnog/eggnog_success.flag"
+rm -f "$RESULT_DIR/busco/busco_success.flag"
+rm -f "$RESULT_DIR/genomad/genomad_success.flag"
+rm -f "$RESULT_DIR/amr_virulence/amr_virulence_success.flag"
+rm -f "$RESULT_DIR/secondary_metabolites/secondary_metabolites_success.flag"
+rm -f "$RESULT_DIR/tree/tree_success.flag"
+rm -f "$RESULT_DIR/rp/draw_success.flag"
+rm -f "$RESULT_DIR/rp/report_success.flag"
+
+# Clear old tree genome copies and alignments (to remove deleted bins)
+rm -rf "$RESULT_DIR/tree/genomes"
+rm -rf "$RESULT_DIR/tree/gtdbtk_out"
+rm -f "$RESULT_DIR/tree"/*.treefile
+rm -f "$RESULT_DIR/tree"/selected_taxa_*.txt
+rm -f "$RESULT_DIR/tree"/clean_accessions.txt
+
+# Clear old report outputs
+rm -rf "$RESULT_DIR/rp"
+
+echo "Cleanup complete. Starting downstream pipeline execution."
 echo "-----------------------------------------------------"
 
 # Helper to format duration in MMm SSs or HHh MMm SSs
@@ -55,7 +84,6 @@ format_duration() {
 }
 
 # --- Smart Job Execution Function ---
-# Syntax: run_job <Step_Name> <Script_File> <Expected_Output_Path>
 run_job() {
     local step_name="$1"
     local script_file="$2"
@@ -89,9 +117,9 @@ run_job() {
         
         echo "$start_time_str - [START] $step_name" >> "$TIMELINE_FILE"
         
-        # Execute script locally in the foreground and log output to file while showing in console
-        bash "$script_file" 2>&1 | tee "$log_file"
-        local exit_code=${PIPESTATUS[0]} # Get exit status of bash command, not tee
+        # Execute script locally in the foreground and log output to file
+        bash "$script_file" > "$log_file" 2>&1
+        local exit_code=$?
         
         local end_epoch=$(date +%s)
         local end_time_str=$(date '+%Y-%m-%d %H:%M:%S')
@@ -117,32 +145,6 @@ run_job() {
     fi
 }
 
-# 1. Quality Control - Fastp
-run_job "Fastp" "$SCRIPT_DIR/1.fastp.sh" "$RESULT_DIR/fastp/trim.${FIRST_SAMPLE}_1.fq.gz"
-
-# 2. Quality Control & Filtering - BBDuk / Bowtie / Kraken2
-run_job "BBDuk" "$SCRIPT_DIR/2.bbduk.sh" "$RESULT_DIR/k2/clean.${FIRST_SAMPLE}_1.fq.gz"
-
-# 3. Genome Assembly
-run_job "Assembly" "$SCRIPT_DIR/3.assembly.sh" "$RESULT_DIR/assembly/${FIRST_SAMPLE}_assembly/final.contigs.fa"
-
-# 4. Genome Polishing - Pilon Round 1
-run_job "Pilon_R1" "$SCRIPT_DIR/4.pilon.sh" "$RESULT_DIR/bwa_pilon/${FIRST_SAMPLE}/${FIRST_SAMPLE}_pilon.fasta"
-
-# 5. Scaffolding - SSpaces
-run_job "SSpaces" "$SCRIPT_DIR/5.sspaces.sh" "$RESULT_DIR/sspaces/${FIRST_SAMPLE}_scaffold/${FIRST_SAMPLE}_sspace.final.scaffolds.fasta"
-
-# 6. Polishing Round 2 - Pilon SS
-run_job "Pilon_R2" "$SCRIPT_DIR/6.pilon_ss.sh" "$RESULT_DIR/final_polished/${FIRST_SAMPLE}/${FIRST_SAMPLE}_final_polished.fasta"
-
-# 6.5. Genome Binning - MetaBAT2
-run_job "MetaBAT2" "$SCRIPT_DIR/6.5.metabat2.sh" "$RESULT_DIR/binned_assemblies/metabat_success.flag"
-
-# 8.1. Genome Statistics & Quality - CheckM (Original Bins)
-run_job "CheckM" "$SCRIPT_DIR/8.1.checkm.sh" "$RESULT_DIR/checkm/checkm_success.flag"
-
-# 8.2. Taxonomy Classification - GTDB-Tk (Original Bins)
-run_job "GTDB-Tk" "$SCRIPT_DIR/8.2.gtdbtk.sh" "$RESULT_DIR/gtdbtk/gtdbtk_success.flag"
 
 if [[ "$RUN_MAGPURIFY" == "true" ]]; then
     echo "MAGpurify contamination removal is ENABLED."
@@ -158,6 +160,9 @@ if [[ "$RUN_MAGPURIFY" == "true" ]]; then
 else
     echo "MAGpurify contamination removal is DISABLED. Skipping refinement and post-cleaning verification."
 fi
+
+# 8.2. Taxonomy Classification - GTDB-Tk (Filtered Bins)
+run_job "GTDB-Tk" "$SCRIPT_DIR/8.2.gtdbtk.sh" "$RESULT_DIR/gtdbtk/gtdbtk_success.flag"
 
 # 7. Gene Prediction - Bakta
 run_job "Bakta" "$SCRIPT_DIR/7.bakta.sh" "$RESULT_DIR/annotation/bakta_success.flag"
@@ -187,10 +192,20 @@ run_job "Phylogeny_Tree" "$SCRIPT_DIR/12.build_tree.sh" "$RESULT_DIR/tree/tree_s
 # 13. Generate R Visualizations
 run_job "Genomic_Visualizations" "$SCRIPT_DIR/13.draw.sh" "$RESULT_DIR/rp/draw_success.flag"
 
-# 14. Render Quarto Report HTML
-run_job "Report_Render" "$SCRIPT_DIR/14.render_report.sh" "$RESULT_DIR/rp/report_success.flag"
+# 14. Prepare Quarto Report QMD (Stops here to let user write custom conclusions)
+run_job "Report_Prepare" "$SCRIPT_DIR/14.prepare_report.sh" "$RESULT_DIR/rp/14.rp.qmd"
 
-echo "====================================================="
-echo "Pipeline sequential execution complete!"
-echo "All outputs are available in $RESULT_DIR"
-echo "====================================================="
+echo "================================================================================"
+echo "                 PIPELINE ANALYSIS COMPLETE (PAUSED FOR REPORT)                  "
+echo "================================================================================"
+echo "All genomic analysis, tree building, and visualizations have completed."
+echo "The report template has been prepared at: $RESULT_DIR/rp/14.rp.qmd"
+echo ""
+echo "To customize your report before final generation:"
+echo "1. Open the file: $RESULT_DIR/rp/14.rp.qmd"
+echo "2. Navigate to the '# Conclusion' section at the bottom."
+echo "3. Write your custom conclusions or explanations for the batch/samples."
+echo "4. Save the file."
+echo "5. Render the final HTML report by running:"
+echo "   bash script/14.render_report.sh"
+echo "================================================================================"

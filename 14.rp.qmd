@@ -1,0 +1,495 @@
+---
+title: "WGS-bacomix"
+date: May/6/2026
+date-format: long
+
+number-sections: true
+highlight-style: pygments
+format:
+  html:
+    toc: true
+    toc-title: Contents
+    include-in-header:
+      - text: |
+          <style>
+          /* Make all iframes responsive */
+          .iframe-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            margin-bottom: 1em;
+          }
+          .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 8px;
+          }
+          </style>
+    include-before-body:
+      - file: header_footer/header1.html
+    include-after-body:
+      - file: header_footer/footer1.html
+    grid: 
+      body-width: 1200px
+      sidebar-width: 258px
+    code-fold: false
+    code-tools: false
+editor: visual
+---
+
+::: {#wrn-1 .callout-important}
+## Important
+
+Please keep this report inside the report folder when opening it.
+:::
+
+# Project Workflow
+
+Taxonomic classification, genomic assembly, gene annotation, mobilome/resistome profiling, secondary metabolite mining, and phylogenomic placement for shotgun sequencing data.
+
+Click on any section below to expand and view the details of the pipeline.
+
+::: {.callout-note collapse="true"}
+## 1. Whole Genome Sequencing & Quality Control
+* **Data:** Raw paired-end reads.
+* **Pre-processing:** Adapter removal and quality trimming using **fastp**, followed by contaminant/host read filtration using **BBDuk** (QC reports in Section 4).
+:::
+
+::: {.callout-note collapse="true"}
+## 2. De Novo Assembly, Scaffolding & Consensus Polishing
+* **Process:** Assembling clean reads into contigs with **MEGAHIT**, scaffolding with **SSPACE**, and base error correction through iterative **Pilon** polishing to obtain high-fidelity scaffolds.
+:::
+
+::: {.callout-note collapse="true"}
+## 3. Metagenome Binning & Curation
+* **Process:** Grouping assembled scaffolds into Metagenome-Assembled Genomes (MAGs) using **MetaBAT2** and **MaxBin2**, followed by contaminant contig filtering using **MAGPurify** (Section 5).
+:::
+
+::: {.callout-note collapse="true"}
+## 4. Quality & Completeness Assessment
+* **Process:** Estimating genomic completeness and contamination via machine learning models in **CheckM2** (Section 6.1) and validating conserved gene content using **BUSCO** (Section 7).
+:::
+
+::: {.callout-note collapse="true"}
+## 5. Taxonomic Classification
+* **Process:** Determining primary taxonomic lineages and closest reference genomes using the Genome Taxonomy Database Toolkit (**GTDB-Tk**) (Section 6.2).
+:::
+
+::: {.callout-note collapse="true"}
+## 6. Structural & Functional Annotation
+* **Tools Used:** **Bakta** for structural annotations (ORFs, tRNAs, rRNAs) (Section 5), and **EggNOG-mapper** for functional orthology, COG categorizations, and KEGG pathway mapping (Section 8).
+:::
+
+::: {.callout-note collapse="true"}
+## 7. Mobilome & Resistome Profiling
+* **Process:** Identification of plasmids and viruses/proviruses via **geNomad** and quality assessment with **CheckV** (Section 9); screening for antibiotic resistance genes (ARGs) and virulence factors using **CARD (RGI)**, **ResFinder**, and **VFDB** (Section 10).
+:::
+
+::: {.callout-note collapse="true"}
+## 8. Secondary Metabolite & Bacteriocin Mining
+* **Process:** Mining biosynthetic gene clusters (BGCs) and bacteriocins/RiPPs using **antiSMASH** and **BAGEL4** (Section 11).
+:::
+
+::: {.callout-note collapse="true"}
+## 9. Phylogenomic Placement
+* **Process:** Extracting marker genes, constructing Maximum-Likelihood trees with **IQ-TREE**, and rendering trees with **ggtree** (Section 12).
+:::
+
+# Bioinformatic workflow
+
+```{mermaid}
+%%{init: {'themeVariables': { 'fontSize': '14px'}, 'flowchart': {'nodeSpacing': 30, 'rankSpacing': 40}}}%%
+flowchart TD
+    %% Nodes
+    Raw[("Raw FASTQ Reads")] 
+    Fastp["1. QC & Trimming<br/>(1.fastp.sh)"]
+    BBDuk["2. Host/Contaminant Filtering<br/>(2.bbduk.sh)"]
+    
+    Megahit["3. De Novo Assembly<br/>(3.assembly.sh)"]
+    Pilon1["4. Pre-Scaffold Polish<br/>(4.pilon.sh)"]
+    SSPACE["5. Scaffolding<br/>(5.sspaces.sh)"]
+    Pilon2["6. Post-Scaffold Polish<br/>(6.pilon_ss.sh)"]
+    
+    Binning["7. Genome Binning<br/>(6.5.metabat2.sh)"]
+    MAGPurify["8. MAG Curation<br/>(8.5.magpurify.sh)"]
+    
+    Bakta["9. Structural Annotation<br/>(7.bakta.sh)"]
+    
+    CheckM{{"10. Quality Assessment<br/>(8.6.checkm_cleaned.sh / 10.busco.sh)"}}
+    GTDB["11. Taxonomy Profiling<br/>(8.7.gtdbtk_cleaned.sh)"]
+    Eggnog["12. Functional Annotation<br/>(9.eggnog.sh)"]
+    
+    IQTree["13. Phylogenomics<br/>(12.build_tree.sh)"]
+    
+    Mobilome["14. Mobilome / Plasmids<br/>(10.5.plasmid_prediction.sh)"]
+    Resistome["15. Resistome / Virulence<br/>(10.6.amr_virulence.sh)"]
+    SecMet["16. Secondary Metabolites<br/>(10.7.secondary_metabolites.sh)"]
+    
+    Report["17. Report Compilation<br/>(14.render_report.sh)"]
+    Output[("Interactive Genomic Report")]
+
+    %% Connections
+    Raw --> Fastp --> BBDuk --> Megahit --> Pilon1 --> SSPACE --> Pilon2 --> Binning --> MAGPurify --> Bakta
+    Bakta --> CheckM
+    Bakta --> GTDB --> IQTree
+    Bakta --> Eggnog
+    
+    Eggnog --> Mobilome
+    Eggnog --> Resistome
+    Eggnog --> SecMet
+    
+    IQTree & Mobilome & Resistome & SecMet --> Report --> Output
+
+    %% Styling
+    classDef input fill:#2b2d42,color:#fff,stroke:none
+    classDef process fill:#edf2f4,stroke:#8d99ae,color:#2b2d42
+    classDef check fill:#ffddd2,stroke:#e29578,color:#2b2d42
+    classDef output fill:#148F77,stroke:#0f6a58,color:#fff,stroke-width:2px
+
+    class Raw input
+    class Fastp,BBDuk,Megahit,Pilon1,SSPACE,Pilon2,Binning,MAGPurify,Bakta,GTDB,Eggnog,IQTree,Mobilome,Resistome,SecMet,Report process
+    class CheckM check
+    class Output output
+```
+
+# Methods
+This report utilizes a robust downstream bioinformatics pipeline to evaluate sequence quality, assemble reads, identify taxa, annotate genes, and determine secondary metabolite profiles. Raw fastq files were cleaned using Fastp and host-filtered with BBDuk. *De novo* assembly was performed via MEGAHIT and SPAdes. Contigs were scaffolded with SSPACE and polished using Pilon to ensure sequence fidelity. Genome completeness and contamination were quantitatively assessed using CheckM2 and BUSCO, and the primary taxonomic lineage was identified using GTDB-Tk. Functional assignments (COG, KEGG) were inferred by eggNOG-mapper, while structural annotation was managed via Bakta. AntiSMASH and BAGEL4 were utilized to screen assemblies for secondary metabolite clusters and bacteriocins, and mobile genetic elements were isolated using geNomad. Phylogenetic topologies were constructed utilizing IQ-TREE and visualized via ggtree.
+
+# Quality Control
+<!-- QC_START -->
+```{=html}
+<iframe width="100%" height="800" src="00_QC/sam1.report.html" title="MultiQC Report" data-external="1" style="border:none;"></iframe>
+<br>
+<a href="00_QC/sam1.report.html" download="sam1.report.html" class="btn btn-primary" style="margin-top: 10px;">
+  <i class="bi bi-download"></i> Download Full QC HTML
+</a>
+```
+<!-- QC_END -->
+
+## Taxonomic Abundance Profile (Kraken2)
+
+The stacked barplot below displays the taxonomic composition of the raw reads (relative abundance %) for the top 20 species, plus unclassified reads. Below the plot, you can explore the full interactive data table showing reads count and percentages for all detected taxa.
+
+### Abundance Plot
+```{=html}
+<iframe width="100%" height="800" src="00_QC/kraken2_abundance_plot.html" title="Kraken2 Abundance Plot" data-external="1" style="border:none;"></iframe>
+```
+
+### Detailed Classification Table
+```{=html}
+<iframe width="100%" height="800" src="00_QC/kraken2_abundance_table.html" title="Kraken2 Abundance Table" data-external="1" style="border:none;"></iframe>
+```
+
+# Genome Assembly Stats 
+
+## Assembly_Stats
+
+<!-- BAKTA_START -->
+```{=html}
+<iframe width="100%" height="600" src="03_Bakta/bakta_report.html" title="Bakta Annotation Stats" data-external="1" style="border:none;"></iframe>
+<br>
+<a href="data/sam1.txt" download="sam1_summary.txt" class="btn btn-primary" style="margin-top: 10px;">
+  <i class="bi bi-download"></i> Download Bakta Summary (TXT)
+</a>
+<a href="data/sam1.tsv" download="sam1_annotation.tsv" class="btn btn-secondary" style="margin-top: 10px;">
+  <i class="bi bi-download"></i> Download Full Annotation (TSV)
+</a>
+```
+<!-- BAKTA_END -->
+
+# Assembly Taxonomy & Quality
+Genome assembly quality assessment is a crucial step in validating the reliability of the assembled sequences. This process evaluates the completeness and contamination levels of the reconstructed genome to ensure it is of sufficient quality for downstream analysis. We utilize two complementary tools for this assessment: BUSCO to check for universal single-copy orthologs, and CheckM2 to estimate genome completeness and contamination using machine learning models.
+
+## CheckM Summary
+After data processing, the sequencing reads are assembled into contigs. The quality of the resulting assembly is subsequently assessed using CheckM2, which estimates genome completeness and contamination levels using machine learning models. This quality control step is critical to evaluate the reliability of the reconstructed genome before proceeding to downstream taxonomic classification and gene annotation.
+
+```{=html}
+<iframe width="100%" height="600" src="04_Taxonomy/taxonomy_report_checkm.html" title="CheckM Summary" data-external="1" style="border:none;"></iframe>
+<br>
+<a href="data/checkm_summary.txt" download="checkm_summary.txt" class="btn btn-primary" style="margin-top: 10px;">
+  <i class="bi bi-download"></i> Download CheckM Data
+</a>
+```
+
+## GTDB-Tk Classification
+Taxonomic classification of high-quality assembly was performed using GTDB-Tk (Genome Taxonomy Database Toolkit), which classifies bacterial and archaeal genomes based on the Genome Taxonomy Database (GTDB). GTDB-Tk uses a reference tree of bacterial and archaeal genomes to assign taxonomy from domain to species level. The tool provides detailed classification information including the closest reference genome and its similarity measures.
+
+```{=html}
+<iframe width="100%" height="600" src="04_Taxonomy/taxonomy_report_gtdbtk.html" title="GTDB-Tk Summary" data-external="1" style="border:none;"></iframe>
+<br>
+<a href="04_Taxonomy/taxonomy_report.pdf" download="taxonomy_report.pdf" class="btn btn-primary" style="margin-top: 10px;">
+  <i class="bi bi-file-earmark-pdf"></i> Download Taxonomy Report (PDF)
+</a>
+<a href="data/gtdbtk.bac120.summary.tsv" download="data/gtdbtk.bac120.summary.tsv" class="btn btn-secondary" style="margin-top: 10px;">
+  <i class="bi bi-download"></i> Download GTDB-Tk Raw Data
+</a>
+```
+
+# BUSCO Completeness Assessment
+BUSCO (Benchmarking Universal Single-Copy Orthologs) provides a quantitative assessment of genome assembly completeness based on evolutionarily-informed expectations of gene content. The assessment evaluates how many expected genes are present, fragmented, or missing.
+
+<!-- BUSCO_START -->
+```{=html}
+<iframe width="100%" height="800" src="01_BUSCO/BUSCO_Report.html" title="BUSCO Summary" data-external="1" style="border:none;"></iframe>
+<br>
+<a href="01_BUSCO/BUSCO_Report.pdf" download="BUSCO_Report.pdf" class="btn btn-primary" style="margin-top: 10px;">
+  <i class="bi bi-file-earmark-pdf"></i> Download BUSCO Plot (PDF)
+</a>
+<a href="data/short_summary.specific.enterobacteriaceae_odb12.sam1_busco.json" download="busco_summary.json" class="btn btn-secondary" style="margin-top: 10px;">
+  <i class="bi bi-download"></i> Download BUSCO JSON
+</a>
+```
+<!-- BUSCO_END -->
+
+# Functional Annotation
+## COG Categories Overview
+Gene annotation was performed to identify and characterize the functional elements within the assembled genome. The COG (Clusters of Orthologous Groups) categories provide a standardized classification system for protein functions.
+
+<!-- COG_START -->
+```{=html}
+<iframe width="100%" height="800" src="02_Functional/01_COG_Grouped.html" title="COG Categories" data-external="1" style="border:none;"></iframe>
+<br>
+<a href="02_Functional/01_COG_Grouped.pdf" download="01_COG_Grouped.pdf" class="btn btn-primary" style="margin-top: 10px;">
+  <i class="bi bi-file-earmark-pdf"></i> Download COG Plot (PDF)
+</a>
+<a href="02_Functional/01_COG_Grouped.png" download="01_COG_Grouped.png" class="btn btn-secondary" style="margin-top: 10px;">
+  <i class="bi bi-image"></i> Download COG Plot (PNG)
+</a>
+```
+<!-- COG_END -->
+
+## KEGG Functional Pathways
+### All KEGG Pathways Data
+
+<!-- KEGG_TABLE_START -->
+```{=html}
+<iframe width="100%" height="600" src="02_Functional/All_KEGG_Table.html" title="KEGG Pathway Table" data-external="1" style="border:none;"></iframe>
+<br>
+<a href="02_Functional/All_KEGG_Pathways.csv" download="All_KEGG_Pathways.csv" class="btn btn-primary" style="margin-top: 10px;">
+  <i class="bi bi-file-earmark-spreadsheet"></i> Download KEGG Data (CSV)
+</a>
+```
+<!-- KEGG_TABLE_END -->
+
+### KEGG Pathway Comparison Heatmap
+
+<!-- KEGG_HEATMAP_START -->
+<!-- KEGG_HEATMAP_END -->
+
+### Top 50 KEGG Pathways Plot
+
+<!-- KEGG_PLOT_START -->
+```{=html}
+<iframe width="100%" height="800" src="02_Functional/02_Top50_KEGG_Plot_Interactive.html" title="Top 50 KEGG Plot" data-external="1" style="border:none;"></iframe>
+<br>
+<a href="02_Functional/02_Top50_KEGG_Plot.pdf" download="02_Top50_KEGG_Plot.pdf" class="btn btn-primary" style="margin-top: 10px;">
+  <i class="bi bi-file-earmark-pdf"></i> Download KEGG Plot (PDF)
+</a>
+```
+<!-- KEGG_PLOT_END -->
+
+# Plasmid & Virus Prediction
+
+Identification and characterization of mobile genetic elements (plasmids and viruses) within the genome assemblies using **geNomad** and quality assessment of predicted viral sequences using **CheckV**.
+
+<!-- GENOMAD_START -->
+<!-- GENOMAD_END -->
+
+# Antimicrobial Resistance & Virulence Genes
+
+Genomic screening of antimicrobial resistance (AMR) genes and virulence factors across the assemblies. Searches were conducted using **ABRicate** against the **CARD**, **ResFinder**, and **VFDB** databases.
+
+<!-- AMR_VIRULENCE_START -->
+<!-- AMR_VIRULENCE_END -->
+
+# Secondary Metabolites & Bacteriocins
+
+Mining of biosynthetic gene clusters (BGCs) and antimicrobial peptides (bacteriocins/RiPPs) using **antiSMASH** (v8) and **BAGEL4**.
+
+<!-- SECONDARY_METABOLITES_START -->
+<!-- SECONDARY_METABOLITES_END -->
+
+# Phylogenetic Analysis
+```{=html}
+<!-- Using an image tag for the PNG so it loads cleanly natively in HTML -->
+<img src="05_Phylogeny/suran_wgs_final_publication_tree.png" alt="Phylogenetic Tree" style="width:100%; max-width:1200px; height:auto; border: 1px solid #ccc;">
+<br>
+<a href="05_Phylogeny/suran_wgs_final_publication_tree.pdf" download="suran_wgs_final_publication_tree.pdf" class="btn btn-primary" style="margin-top: 10px;">
+  <i class="bi bi-file-earmark-pdf"></i> Download Publication Tree (PDF)
+</a>
+<a href="data/suran_wgs_annotated_tree.treefile" download="suran_wgs_annotated_tree.treefile" class="btn btn-secondary" style="margin-top: 10px;">
+  <i class="bi bi-diagram-3"></i> Download Raw Treefile (Newick)
+</a>
+```
+
+# Conclusion / Batch Summary
+
+This whole-genome sequencing (WGS) and metagenomic binning analysis characterized a diverse cohort of bacterial isolates and recovered bins. A summary of the genomic properties, taxonomic assignments, and predicted mobile genetic elements (MGEs) is detailed below:
+
+### 📊 Batch Summary Table
+
+```{r}
+#| echo: false
+#| message: false
+
+library(DT)
+library(dplyr)
+
+data <- tibble(
+  `Sample / Bin` = c("243", "27_maxbin.002", "85_maxbin.001", "85_maxbin.002", "TC3"),
+  `Taxon Classification` = c("Bacillus subtilis", "Lactiplantibacillus pentosus", "Lysinibacillus capsici", "Lactiplantibacillus pentosus", "Bacillus velezensis"),
+  `Genome Size (Mb)` = c(4.14, 2.85, 4.62, 4.18, 4.03),
+  `Depth` = c("268.0x", "377.2x", "258.6x", "114.3x", "491.4x"),
+  `BUSCO Complete (%)` = c("99.4%", "93.8%", "88.8%", "98.7%", "99.2%"),
+  `Predicted Plasmids` = c(2, 4, 4, 4, 0),
+  `Predicted Proviruses` = c(4, 2, 3, 3, 3),
+  `Key Notes / Findings` = c("Highly complete isolate genome. Contains two moderate-score plasmids and multiple intact proviruses.",
+                             "High-quality lactic acid bacteria bin. Plurality of high-score plasmids detected.",
+                             "Complex co-culture bin. Possesses multiple plasmids and well-conserved proviral regions.",
+                             "Highly complete L. pentosus bin from a mixed sample. Rich in mobile genetic elements.",
+                             "Clean assembly with high completeness. Lacks detectable plasmids but carries multiple Caudoviricetes proviruses.")
+)
+
+datatable(
+  data,
+  rownames = FALSE,
+  options = list(
+    dom = 't',
+    paging = FALSE,
+    searching = FALSE,
+    scrollX = TRUE,
+    autoWidth = FALSE,
+    initComplete = JS(
+      "function(settings, json) {",
+      "  $(this.api().table().header()).css({",
+      "    'background-color': '#148F77',",
+      "    'color': '#ffffff',",
+      "    'font-family': 'Arial, sans-serif',",
+      "    'font-size': '13px',",
+      "    'font-weight': 'bold'",
+      "  });",
+      "}"
+    )
+  ),
+  class = 'cell-border stripe hover'
+)
+```
+
+### 🔍 Key Insights & Biological Observations
+
+1. **Taxonomic Diversity & Metagenomic Resolution**:
+   - The cohort represents a mixture of **Bacillaceae**, **Planococcaceae** (*Lysinibacillus*), and **Lactobacillaceae** (*Lactiplantibacillus*) species, which are commonly associated with probiotic, soil, and fermentation environments.
+   - Using MaxBin2 allowed successful resolution of the co-culture sample **85**, separating it into *Lysinibacillus capsici* (85_maxbin.001) and *Lactiplantibacillus pentosus* (85_maxbin.002) with high genome completeness.
+
+2. **Completeness & Quality**:
+   - The genomes show excellent completeness, with BUSCO scores ranging from **88.8%** to **99.4%**. 
+   - Polishing with Pilon mapped reads back to the assemblies, correcting errors and ensuring high-quality consensus sequences for annotation.
+
+3. **Mobile Genetic Elements (MGEs) Profile**:
+   - **Plasmids**: High-score plasmids were detected in almost all strains except *Bacillus velezensis* (TC3). The *Lactiplantibacillus* strains (**27_maxbin.002** and **85_maxbin.002**) feature a complex plasmid landscape with multiple high-confidence plasmid contigs (scores > 0.98).
+   - **Viruses**: Multiple *Caudoviricetes* proviruses were identified across all assemblies, indicating widespread bacteriophage integration in these genomes, with several regions evaluated as medium-quality by CheckV.
+
+# Pipeline Software & Databases
+
+The whole-genome sequencing and metagenomics analysis was executed using an automated Snakemake-style downstream pipeline managed via the **Pixi** package manager. Below is the list of tools and databases used with their versions:
+
+::: {.panel-tabset}
+### Software Tools
+
+```{r}
+#| echo: false
+#| message: false
+library(DT)
+library(dplyr)
+
+data_software <- tibble(
+  Tool = c("<b>Pixi</b>", "<b>Fastp</b>", "<b>BBDuk / BBMap</b>", "<b>Bowtie2</b>", "<b>Kraken2</b>", "<b>MEGAHIT</b>", "<b>SPAdes</b>", "<b>Flye</b>", "<b>Pilon</b>", "<b>SSPACE Basic</b>", "<b>CheckM</b>", "<b>GTDB-Tk</b>", "<b>Bakta</b>", "<b>eggNOG-mapper</b>", "<b>geNomad</b>", "<b>CheckV</b>", "<b>ABRicate</b>", "<b>RGI</b>", "<b>antiSMASH</b>", "<b>BAGEL4</b>", "<b>IQ-TREE</b>", "<b>Quarto</b>"),
+  Version = c("<code>0.1.0+</code>", "<code>0.23+</code>", "<code>39.0+</code>", "<code>2.5+</code>", "<code>2.1+</code>", "<code>1.2.9+</code>", "<code>4.0+</code>", "<code>2.9+</code>", "<code>1.24</code>", "<code>2.1.1</code>", "<code>1.2.0+</code>", "<code>2.7.2</code>", "<code>1.12.0+</code>", "<code>2.1+</code>", "<code>1.8+</code>", "<code>1.0+</code>", "<code>1.4.0</code>", "<code>6.0.3+</code>", "<code>8.0.4</code>", "<code>Standalone</code>", "<code>2.2+</code>", "<code>1.3+</code>"),
+  `Role in Pipeline` = c("Environment management and task runners", "Quality control and adapter trimming", "Low-entropy read filtering", "Human host reads removal", "Metagenomic read-level taxonomic profiling", "<i>De novo</i> metagenome assembly", "<i>De novo</i> isolate assembly", "<i>De novo</i> long-reads assembly", "Mismatch and indel polishing", "Contig scaffolding", "Assembly quality checks (completeness/contamination)", "Taxonomic classification", "Rapid genome annotation", "COG/KEGG functional annotation", "Plasmid and virus identification", "Viral quality assessment", "Screening contigs for antimicrobial resistance and virulence genes", "Resistance Gene Identifier (CARD matching tool)", "Biosynthetic gene cluster detection and characterization", "Bacteriocin and RiPP gene cluster mining", "Phylogenetic tree construction", "Report rendering and document compilation")
+)
+
+datatable(
+  data_software,
+  rownames = FALSE,
+  escape = FALSE,
+  options = list(
+    dom = 't',
+    paging = FALSE,
+    searching = FALSE,
+    scrollX = TRUE,
+    autoWidth = FALSE,
+    initComplete = JS(
+      "function(settings, json) {",
+      "  $(this.api().table().header()).css({",
+      "    'background-color': '#148F77',",
+      "    'color': '#ffffff',",
+      "    'font-family': 'Arial, sans-serif',",
+      "    'font-size': '13px',",
+      "    'font-weight': 'bold'",
+      "  });",
+      "}"
+    )
+  ),
+  class = 'cell-border stripe hover'
+)
+```
+
+### Reference Databases
+
+```{r}
+#| echo: false
+#| message: false
+library(DT)
+library(dplyr)
+
+data_db <- tibble(
+  Database = c("<b>Human Genome Index</b>", "<b>Kraken2 Database</b>", "<b>CheckM Database</b>", "<b>GTDB Database</b>", "<b>Bakta Database</b>", "<b>eggNOG Database</b>", "<b>geNomad Database</b>", "<b>CheckV Database</b>", "<b>CARD Database</b>", "<b>CARD Database (RGI)</b>", "<b>ResFinder Database</b>", "<b>VFDB Database</b>", "<b>antiSMASH Databases</b>", "<b>Pfam-A Database</b>"),
+  `Version / Release` = c("<code>GRCh38 / hg38</code>", "<code>PlusPF (2026-02-26)</code>", "<code>2015-01-16</code>", "<code>Release 220</code>", "<code>v5.0 (Full)</code>", "<code>emapperdb-5.0.2</code>", "<code>v1.8</code>", "<code>v1.5</code>", "<code>v3.2.8 (via ABRicate)</code>", "<code>v3.2.8</code>", "<code>2026-06 (via ABRicate)</code>", "<code>2026-06 (via ABRicate)</code>", "<code>v8.0</code>", "<code>v31.0</code>"),
+  Description = c("Reference database for Bowtie2 host screening", "Standard plus protozoa, fungi, and plasmid reference genomes", "Reference marker gene sets for bacteria and archaea", "Reference genome database for GTDB-Tk taxonomic classification", "Protein sequence annotation database", "Reference orthology and functional annotation database", "Reference markers database for plasmid/virus classification", "Reference genome databases for viral quality profiling", "Comprehensive Antibiotic Resistance Database", "Reference database for RGI protein-based resistance matching", "Acquired antimicrobial resistance genes reference", "Virulence Factors Database", "Reference databases for secondary metabolite clusters", "Protein family profile HMMs for bacteriocin detection")
+)
+
+datatable(
+  data_db,
+  rownames = FALSE,
+  escape = FALSE,
+  options = list(
+    dom = 't',
+    paging = FALSE,
+    searching = FALSE,
+    scrollX = TRUE,
+    autoWidth = FALSE,
+    initComplete = JS(
+      "function(settings, json) {",
+      "  $(this.api().table().header()).css({",
+      "    'background-color': '#148F77',",
+      "    'color': '#ffffff',",
+      "    'font-family': 'Arial, sans-serif',",
+      "    'font-size': '13px',",
+      "    'font-weight': 'bold'",
+      "  });",
+      "}"
+    )
+  ),
+  class = 'cell-border stripe hover'
+)
+```
+:::
+
+# References
+Manni, M., Berkeley, M. R., Seppey, M., Simão, F. A., & Zdobnov, E. M. (2021). BUSCO Update: Novel and Streamlined Workflows along with Broader and Deeper Phylogenetic Coverage for Scoring of Eukaryotic, Prokaryotic, and Viral Genomes. Molecular Biology and Evolution, 38(10), 4647–4654. https://doi.org/10.1093/molbev/msab199
+
+Chklovski, A., Parks, D. H., Woodcroft, B. J., & Tyson, G. W. (2023). CheckM2: a rapid, scalable and accurate tool for assessing microbial genome quality using machine learning. Nature Methods, 20(8), 1203-1212. https://doi.org/10.1038/s41592-023-01940-w
+
+Chaumeil, P. A., Mussig, A. J., Hugenholtz, P., & Parks, D. H. (2022). GTDB-Tk v2: memory friendly classification with the genome taxonomy database. Bioinformatics, 38(23), 5315-5316. https://doi.org/10.1093/bioinformatics/btac672
+
+Schwengers, O., Jelonek, L., Giber, U. et al. (2021). Bakta: rapid and standardized annotation of bacterial genomes via alignment-free sequence identification. Microbial Genomics, 7(11), 000685. https://doi.org/10.1099/mgen.0.000685
+
+Cantalapiedra, C. P., Hernández-Plaza, A., Letunic, I., Bork, P., & Huerta-Cepas, J. (2021). eggNOG-mapper v2: Functional Annotation, Orthology Assignments, and Domain Prediction at the Metagenomic Scale. Molecular Biology and Evolution, 38(12), 5825–5829. https://doi.org/10.1093/molbev/msab293
+
+Tatusov, R. L., Galperin, M. Y., Natale, D. A., & Koonin, E. V. (2000). The COG database: a tool for genome-scale analysis of protein functions and evolution. Nucleic Acids Research, 28(1), 33-36. https://doi.org/10.1093/nar/28.1.33

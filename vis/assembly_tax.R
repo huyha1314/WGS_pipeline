@@ -84,10 +84,81 @@ print(ggarrange(checkm_plot, gtdbtk_plot, ncol = 1, nrow = 2, heights = c(1, 1))
 dev.off()
 
 cat("Generating Interactive HTML tables...\n")
-html_checkm <- datatable(checkm_df, options = list(pageLength = 15, scrollX = TRUE), 
-                         caption = htmltools::tags$caption(style = 'font-weight: bold; font-size: 1.5em;', 'CheckM Statistics'))
-html_gtdbtk <- datatable(gtdbtk_df, options = list(pageLength = 10, scrollX = TRUE), 
-                         caption = htmltools::tags$caption(style = 'font-weight: bold; font-size: 1.5em;', 'GTDB-Tk Identity'))
+
+# Ensure numeric columns for styling
+checkm_df$Completeness <- as.numeric(as.character(checkm_df$Completeness))
+checkm_df$Contamination <- as.numeric(as.character(checkm_df$Contamination))
+
+html_checkm <- datatable(
+  checkm_df,
+  rownames = FALSE,
+  options = list(
+    pageLength = 15,
+    scrollX = TRUE,
+    autoWidth = FALSE,
+    initComplete = JS(
+      "function(settings, json) {",
+      "  $(this.api().table().header()).css({",
+      "    'background-color': '#148F77',",
+      "    'color': '#ffffff',",
+      "    'font-family': 'Arial, sans-serif',",
+      "    'font-size': '13px',",
+      "    'font-weight': 'bold'",
+      "  });",
+      "}"
+    )
+  ),
+  class = 'cell-border stripe hover',
+  caption = htmltools::tags$caption(style = 'font-weight: bold; font-size: 1.5em; color: #2C3E50; font-family: Arial, sans-serif;', 'CheckM Statistics')
+) %>%
+  formatStyle(
+    'Completeness',
+    backgroundColor = styleInterval(c(50, 90), c('#f8d7da', '#fff3cd', '#d4edda')),
+    color = styleInterval(c(50, 90), c('#721c24', '#856404', '#155724')),
+    fontWeight = 'bold'
+  ) %>%
+  formatStyle(
+    'Contamination',
+    backgroundColor = styleInterval(c(5, 10), c('#d4edda', '#fff3cd', '#f8d7da')),
+    color = styleInterval(c(5, 10), c('#155724', '#856404', '#721c24')),
+    fontWeight = 'bold'
+  )
+
+# Select key columns for cleaner presentation in GTDB-Tk table
+cols_to_keep <- c("user_genome", "classification", "closest_genome_reference", "closest_genome_ani", "closest_genome_af", "classification_method")
+cols_present <- intersect(cols_to_keep, colnames(gtdbtk_df))
+gtdbtk_display <- gtdbtk_df[, cols_present, drop=FALSE]
+
+# Rename columns for presentation
+colnames(gtdbtk_display)[colnames(gtdbtk_display) == "user_genome"] <- "Bin ID"
+colnames(gtdbtk_display)[colnames(gtdbtk_display) == "classification"] <- "GTDB-Tk Classification"
+colnames(gtdbtk_display)[colnames(gtdbtk_display) == "closest_genome_reference"] <- "Closest Reference Genome"
+colnames(gtdbtk_display)[colnames(gtdbtk_display) == "closest_genome_ani"] <- "ANI (%)"
+colnames(gtdbtk_display)[colnames(gtdbtk_display) == "closest_genome_af"] <- "Alignment Fraction"
+colnames(gtdbtk_display)[colnames(gtdbtk_display) == "classification_method"] <- "Classification Method"
+
+html_gtdbtk <- datatable(
+  gtdbtk_display,
+  rownames = FALSE,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    autoWidth = FALSE,
+    initComplete = JS(
+      "function(settings, json) {",
+      "  $(this.api().table().header()).css({",
+      "    'background-color': '#148F77',",
+      "    'color': '#ffffff',",
+      "    'font-family': 'Arial, sans-serif',",
+      "    'font-size': '13px',",
+      "    'font-weight': 'bold'",
+      "  });",
+      "}"
+    )
+  ),
+  class = 'cell-border stripe hover',
+  caption = htmltools::tags$caption(style = 'font-weight: bold; font-size: 1.5em; color: #2C3E50; font-family: Arial, sans-serif;', 'GTDB-Tk Identity')
+)
 
 saveWidget(html_checkm, out_checkm_html, selfcontained = TRUE)
 saveWidget(html_gtdbtk, out_gtdbtk_html, selfcontained = TRUE)

@@ -51,6 +51,22 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
     else
         echo "WARNING: No MetaBAT2 bins found for $SAMPLE"
     fi
+
+    # 3. Copy all MaxBin2 bins
+    MAXBIN_DIR="$RESULT_DIR/binning/${SAMPLE}/maxbin"
+    if [[ "$RUN_MAXBIN" == "true" ]]; then
+        if [[ -d "$MAXBIN_DIR" && -n "$(ls -A "$MAXBIN_DIR"/*.fasta 2>/dev/null)" ]]; then
+            echo "Copying all MaxBin2 bins for $SAMPLE to collection..."
+            for bin_file in "$MAXBIN_DIR"/*.fasta; do
+                if [[ -f "$bin_file" ]]; then
+                    bin_basename=$(basename "$bin_file" .fasta)
+                    cp "$bin_file" "${COLLECTED_DIR}/${bin_basename}.fasta"
+                fi
+            done
+        else
+            echo "WARNING: No MaxBin2 bins found for $SAMPLE"
+        fi
+    fi
 done < "$INPUT_SHEET"
 
 total_genomes=$(ls -1 "$COLLECTED_DIR"/*.fasta 2>/dev/null | wc -l)

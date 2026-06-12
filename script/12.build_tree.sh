@@ -12,7 +12,7 @@ source "$SCRIPT_DIR/../config.sh"
 
 FIRST_GENOME_FILE=$(ls -1 "$RESULT_DIR/collected_assemblies"/*.fasta | grep -v "_original" | head -n 1)
 FIRST_SAMPLE=$(basename "$FIRST_GENOME_FILE" .fasta)
-INPUT_LIST="$RESULT_DIR/tree/selected_taxa_${FIRST_SAMPLE}.txt"
+INPUT_LIST="$RESULT_DIR/tree/selected_taxa_${BATCH_NAME}.txt"
 WORK_DIR="$RESULT_DIR/tree"
 THREADS=48
 
@@ -31,20 +31,49 @@ done
 echo "=== 2. Preparing Selected Taxa ==="
 if [ ! -s "$INPUT_LIST" ]; then
     echo " -> Generating selected taxa list dynamically using python.find_tax.py..."
-    GTDB_CLASSIFY_TREE="$RESULT_DIR/gtdbtk_cleaned/classify/gtdbtk.bac120.classify.tree.1.tree"
-    if [ ! -f "$GTDB_CLASSIFY_TREE" ]; then
-        GTDB_CLASSIFY_TREE="$RESULT_DIR/gtdbtk/classify/gtdbtk.bac120.classify.tree.1.tree"
+    GTDB_CLASSIFY_TREE=""
+    for tree_candidate in \
+        "$RESULT_DIR/gtdbtk_cleaned/classify/gtdbtk.bac120.classify.tree.1.tree" \
+        "$RESULT_DIR/gtdbtk_cleaned/classify/gtdbtk.bac120.classify.tree" \
+        "$RESULT_DIR/gtdbtk_cleaned/classify/gtdbtk.backbone.bac120.classify.tree" \
+        "$RESULT_DIR/gtdbtk/classify/gtdbtk.bac120.classify.tree.1.tree" \
+        "$RESULT_DIR/gtdbtk/classify/gtdbtk.bac120.classify.tree" \
+        "$RESULT_DIR/gtdbtk/classify/gtdbtk.backbone.bac120.classify.tree"; do
+        if [ -f "$tree_candidate" ]; then
+            GTDB_CLASSIFY_TREE="$tree_candidate"
+            break
+        fi
+    done
+
+    # Resolve GTDB-Tk summary TSV path
+    GTDB_TSV=""
+    for tsv_candidate in \
+        "$RESULT_DIR/gtdbtk_cleaned/classify/gtdbtk.bac120.summary.tsv" \
+        "$RESULT_DIR/gtdbtk_cleaned/gtdbtk.bac120.summary.tsv" \
+        "$RESULT_DIR/gtdbtk/classify/gtdbtk.bac120.summary.tsv" \
+        "$RESULT_DIR/gtdbtk/gtdbtk.bac120.summary.tsv"; do
+        if [ -f "$tsv_candidate" ]; then
+            GTDB_TSV="$tsv_candidate"
+            break
+        fi
+    done
+
+    if [ -z "$GTDB_CLASSIFY_TREE" ]; then
+        echo " -> No custom classification tree found in results (likely all genomes were classified by ANI)."
+        echo " -> Falling back to GTDB-Tk reference database tree."
+        GTDB_CLASSIFY_TREE="/worker_data1/huyha/db/gtdbtk/pplacer/gtdb_r232_bac120.refpkg/gtdb_r232_bac120_decorated_unrooted.tree"
     fi
+
     if [ -f "$GTDB_CLASSIFY_TREE" ]; then
         mkdir -p "$(dirname "$INPUT_LIST")"
         pixi run -e tree python3 "$SCRIPT_DIR/python.find_tax.py" \
             -i "$GTDB_CLASSIFY_TREE" \
             -t "$FIRST_SAMPLE" \
             -o "$INPUT_LIST" \
-            -n 20
+            -n 20 \
+            -s "$GTDB_TSV"
     else
-        echo "ERROR: GTDB-Tk classification tree not found in either gtdbtk_cleaned or gtdbtk."
-        echo "Please ensure step 8 (CheckM & GTDB-Tk) has run successfully."
+        echo "ERROR: GTDB-Tk classification tree / reference tree not found."
         exit 1
     fi
 fi
@@ -136,7 +165,7 @@ else
 fi
 
 echo "=== 7. Building Tree (IQ-TREE) ==="
-if [ -f "$WORK_DIR/${FIRST_SAMPLE}_custom_tree.treefile" ]; then
+if [ -f "$WORK_DIR/${BATCH_NAME}_custom_tree.treefile" ]; then
     echo " -> Skipping: IQ-TREE output already exists."
 else
     # Find aligned user msa file
@@ -150,11 +179,11 @@ else
         -m TEST \
         -B 1000 \
         -T "$THREADS" \
-        --prefix "$WORK_DIR/${FIRST_SAMPLE}_custom_tree"
+        --prefix "$WORK_DIR/${BATCH_NAME}_custom_tree"
 fi
 
 echo "=== 8. Adding Species Names to the Tree ==="
-if [ -f "$WORK_DIR/${FIRST_SAMPLE}_annotated_tree.treefile" ]; then
+if [ -f "$WORK_DIR/${BATCH_NAME}_annotated_tree.treefile" ]; then
     echo " -> Skipping: Annotated tree already exists."
 else
     # Save the raw JSON output directly, ignoring the broken dataformat tool
@@ -201,9 +230,9 @@ for acc, new_name in mapping.items():
 
 with open(out_path, "w") as f:
     f.write(tree_text)
-' "$WORK_DIR/${FIRST_SAMPLE}_custom_tree.treefile" "$WORK_DIR/taxonomy_summary.json" "$WORK_DIR/${FIRST_SAMPLE}_annotated_tree.treefile"
+' "$WORK_DIR/${BATCH_NAME}_custom_tree.treefile" "$WORK_DIR/taxonomy_summary.json" "$WORK_DIR/${BATCH_NAME}_annotated_tree.treefile"
 fi
 
 echo "=== Pipeline Complete! ==="
-echo "Your fully annotated tree is here: $WORK_DIR/${FIRST_SAMPLE}_annotated_tree.treefile"
+echo "Your fully annotated tree is here: $WORK_DIR/${BATCH_NAME}_annotated_tree.treefile"
 touch "$WORK_DIR/tree_success.flag"

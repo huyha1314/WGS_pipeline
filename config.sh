@@ -55,10 +55,10 @@ export EGGNOG_DB_PATH="$DB_DIR/eggnog"
 export KRAKEN2_DB_PATH="$DB_DIR/kraken2"
 
 # CheckV Viral Identification Database
-export CHECKV_DB_PATH="$DB_DIR/checkv"
+export CHECKV_DB_PATH="$DB_DIR/checkv/checkv-db-v1.5"
 
 # geNomad Plasmid/Virus Identification Database
-export GENOMAD_DB_PATH="$DB_DIR/genomad"
+export GENOMAD_DB_PATH="$DB_DIR/genomad/genomad_db"
 
 # CheckM Quality Assessment Database
 export CHECKM_DB_PATH="$DB_DIR/checkm"
@@ -68,6 +68,19 @@ export MAGPURIFYDB="$DB_DIR/magpurify"
 
 # Bowtie2 Index for Human Read Filtering (e.g. hg38)
 export BOWTIE2_INDEX="$DB_DIR/bowtie2_indexes/GRCh38_noalt_as/GRCh38_noalt_as"
+
+# ABRicate (AMR & Virulence) Database Directory
+export ABRICATE_DB_DIR="$DB_DIR/abricate"
+
+# RGI (CARD) Database Directory
+export RGI_DB_DIR="$DB_DIR/rgi"
+
+# antiSMASH secondary metabolite database
+export ANTISMASH_DB_DIR="$DB_DIR/antismash"
+
+# BAGEL4 secondary metabolite directory & database
+export BAGEL4_DIR="$DB_DIR/bagel4"
+export BAGEL4_DB_DIR="$BAGEL4_DIR/db"
 
 # --- 4. TOOL-SPECIFIC PARAMETERS ---
 # fastp
@@ -102,5 +115,41 @@ export BAKTA_SPECIES="enterica"
 export GTDBTK_MIN_PERC_AA=10
 
 # --- 5. PIPELINE EXECUTION OPTIONS ---
+# Assembler tool to use. Options: megahit, spades, flye
+# (Note: Megahit & SPAdes support short-reads; Flye is for long-reads)
+export ASSEMBLER="megahit"
+
+# Auto-default polishing (Pilon) and scaffolding (SSpaces) based on assembler choice.
+# SPAdes and Flye assemblies do not need Pilon polishing and SSPACE scaffolding by default.
+# Megahit assemblies require polishing and scaffolding.
+# You can override these defaults by explicitly setting them to true or false.
+if [[ "$ASSEMBLER" == "spades" || "$ASSEMBLER" == "flye" ]]; then
+    export RUN_POLISHING=${RUN_POLISHING:-false}
+    export RUN_SCAFFOLDING=${RUN_SCAFFOLDING:-false}
+else
+    export RUN_POLISHING=${RUN_POLISHING:-true}
+    export RUN_SCAFFOLDING=${RUN_SCAFFOLDING:-true}
+fi
+
 # Set to true to run MAGpurify contaminant removal and checkm/gtdbtk on cleaned bins, or false to skip
 export RUN_MAGPURIFY=false
+
+# Set to true to run MaxBin2 in addition to MetaBAT2, or false to skip
+export RUN_MAXBIN=true
+
+# Set to true to run AMR and Virulence gene search (ResFinder + CARD + VFDB) via abricate, or false to skip
+export RUN_AMR_VIRULENCE=true
+
+# Set to true to run antiSMASH secondary metabolite analysis, or false to skip
+export RUN_ANTISMASH=true
+
+# Set to true to run BAGEL4 bacteriocin analysis, or false to skip
+export RUN_BAGEL4=true
+
+
+# --- 6. BATCH RUN CONFIGURATION ---
+# You can manually name this batch run (e.g., export BATCH_NAME="my_custom_batch").
+# If left empty, it will automatically default to the name of the workspace directory.
+export BATCH_NAME="${BATCH_NAME:-$(basename "$WORKDIR")}"
+
+

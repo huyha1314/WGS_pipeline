@@ -25,6 +25,12 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
     
     # Check if this sample is already finished
     final_polished_out="${workdir}/${SAMPLE}_final_polished.fasta"
+    if [[ "$RUN_POLISHING" != "true" ]]; then
+        echo "Polishing (Round 2) is disabled (RUN_POLISHING=false). Forwarding scaffolds directly..."
+        cp "$scaffold_in" "$final_polished_out"
+        continue
+    fi
+
     if [[ -s "$final_polished_out" ]]; then
         echo "--- Polished file exists for $SAMPLE. Skipping. ---"
         continue

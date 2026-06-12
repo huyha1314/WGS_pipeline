@@ -17,16 +17,23 @@ pigz = "*"
 # Utility to create sample sheet
 create-sheet = "python script/create_samples_sheet.py"
 run-pipeline-local = "./script/11.masterworkflow_local.sh"
+run-pipeline-local-upstream = "./script/11.masterworkflow_local_upstream.sh"
+run-pipeline-local-downstream = "./script/11.masterworkflow_local_downstream.sh"
+run-pipeline-upstream = "./script/11.masterworkflow_upstream.sh"
+run-pipeline-downstream = "./script/11.masterworkflow_downstream.sh"
+filter-reads = "./script/kraken_filter_reads.sh"
 
 # Database download tasks using aria2c for maximum speed
-download-db-gtdbtk = "mkdir -p /worker_data1/huyha/db/gtdbtk && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/gtdbtk -o gtdbtk_data.tar.gz https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz && tar -xvzf /worker_data1/huyha/db/gtdbtk/gtdbtk_data.tar.gz -C /worker_data1/huyha/db/gtdbtk --strip-components=1 && rm /worker_data1/huyha/db/gtdbtk/gtdbtk_data.tar.gz"
-download-db-checkv = "mkdir -p /worker_data1/huyha/db/checkv && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/checkv -o checkv-db-v1.5.tar.gz https://portal.nersc.gov/CheckV/checkv-db-v1.5.tar.gz && tar -xvzf /worker_data1/huyha/db/checkv/checkv-db-v1.5.tar.gz -C /worker_data1/huyha/db/checkv && rm /worker_data1/huyha/db/checkv/checkv-db-v1.5.tar.gz"
+download-db-gtdbtk = "mkdir -p /worker_data1/huyha/db/gtdbtk && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/gtdbtk -o gtdbtk_data.tar.gz https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz && tar -I pigz -xvf /worker_data1/huyha/db/gtdbtk/gtdbtk_data.tar.gz -C /worker_data1/huyha/db/gtdbtk --strip-components=1 && rm /worker_data1/huyha/db/gtdbtk/gtdbtk_data.tar.gz"
+download-db-checkv = "mkdir -p /worker_data1/huyha/db/checkv && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/checkv -o checkv-db-v1.5.tar.gz https://portal.nersc.gov/CheckV/checkv-db-v1.5.tar.gz && tar -I pigz -xvf /worker_data1/huyha/db/checkv/checkv-db-v1.5.tar.gz -C /worker_data1/huyha/db/checkv && rm /worker_data1/huyha/db/checkv/checkv-db-v1.5.tar.gz"
 download-db-bakta = "mkdir -p /worker_data1/huyha/db/bakta && pixi run -e annotation bakta_db download -o /worker_data1/huyha/db/bakta"
-download-db-checkm = "mkdir -p /worker_data1/huyha/db/checkm && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/checkm -o checkm_data.tar.gz https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz && tar -xvzf /worker_data1/huyha/db/checkm/checkm_data.tar.gz -C /worker_data1/huyha/db/checkm && rm /worker_data1/huyha/db/checkm/checkm_data.tar.gz && pixi run -e taxonomy checkm data setRoot /worker_data1/huyha/db/checkm"
+download-db-checkm = "mkdir -p /worker_data1/huyha/db/checkm && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/checkm -o checkm_data.tar.gz https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz && tar -I pigz -xvf /worker_data1/huyha/db/checkm/checkm_data.tar.gz -C /worker_data1/huyha/db/checkm && rm /worker_data1/huyha/db/checkm/checkm_data.tar.gz && pixi run -e taxonomy checkm data setRoot /worker_data1/huyha/db/checkm"
 download-db-genomad = "mkdir -p /worker_data1/huyha/db/genomad && pixi run -e plasmid genomad download-database /worker_data1/huyha/db/genomad"
-download-db-eggnog = "mkdir -p /worker_data1/huyha/db/eggnog && cd /worker_data1/huyha/db/eggnog && aria2c -c -x 16 -s 16 --lowest-speed-limit=10K http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz && aria2c -c -x 16 -s 16 --lowest-speed-limit=10K http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz && aria2c -c -x 16 -s 16 --lowest-speed-limit=10K http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz && echo 'Decompressing databases...' && gunzip -f eggnog.db.gz && tar -zxf eggnog.taxa.tar.gz && rm eggnog.taxa.tar.gz && gunzip -f eggnog_proteins.dmnd.gz"
-download-db-kraken2 = "mkdir -p /worker_data1/huyha/db/kraken2 && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/kraken2 -o k2_pluspf.tar.gz https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20260226.tar.gz && tar -xvzf /worker_data1/huyha/db/kraken2/k2_pluspf.tar.gz -C /worker_data1/huyha/db/kraken2 && rm /worker_data1/huyha/db/kraken2/k2_pluspf.tar.gz"
+download-db-eggnog = "mkdir -p /worker_data1/huyha/db/eggnog && cd /worker_data1/huyha/db/eggnog && aria2c -c -x 16 -s 16 --lowest-speed-limit=10K http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz && aria2c -c -x 16 -s 16 --lowest-speed-limit=10K http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz && aria2c -c -x 16 -s 16 --lowest-speed-limit=10K http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz && echo 'Decompressing databases...' && pigz -d -f eggnog.db.gz && tar -I pigz -xvf eggnog.taxa.tar.gz && rm eggnog.taxa.tar.gz && pigz -d -f eggnog_proteins.dmnd.gz"
+download-db-kraken2 = "mkdir -p /worker_data1/huyha/db/kraken2 && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/kraken2 -o k2_pluspf.tar.gz https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20260226.tar.gz && tar -I pigz -xvf /worker_data1/huyha/db/kraken2/k2_pluspf.tar.gz -C /worker_data1/huyha/db/kraken2 && rm /worker_data1/huyha/db/kraken2/k2_pluspf.tar.gz"
 download-db-magpurify = "mkdir -p /worker_data1/huyha/db/magpurify && aria2c -c -x 16 -s 16 -d /worker_data1/huyha/db/magpurify -o MAGpurify-db-v1.0.tar.bz2 https://zenodo.org/records/3688811/files/MAGpurify-db-v1.0.tar.bz2?download=1 && tar -xvjf /worker_data1/huyha/db/magpurify/MAGpurify-db-v1.0.tar.bz2 -C /worker_data1/huyha/db/magpurify --strip-components=1 && rm /worker_data1/huyha/db/magpurify/MAGpurify-db-v1.0.tar.bz2"
+download-db-amr-virulence = "bash script/download_amr_virulence_db.sh"
+download-db-secondary-metabolites = "bash script/download_secondary_metabolites_db.sh"
 
 # --- FEATURES ---
 [feature.qc.dependencies]
@@ -50,6 +57,7 @@ sspace_basic = ">=2.1.1"
 quast = ">=5.2"
 busco = ">=6.0"
 diamond = ">=2.1.21,<2.2.0"
+numpy = "<2.0"
 
 [feature.annotation.dependencies]
 bakta = ">=1.12.0"
@@ -69,6 +77,8 @@ checkm-genome = ">=1.2"
 gtdbtk = ">=2.7.2"
 setuptools = "<82"
 metabat2 = ">=2.18_23_gc869c52,<3"
+das_tool = "*"
+maxbin2 = ">=2.2.7"
 
 [feature.tree.dependencies]
 iqtree = ">=2.2"
@@ -82,6 +92,45 @@ quarto = ">=1.3"
 [feature.magpurify.dependencies]
 magpurify = ">=2.1.2"
 
+[feature.amr-virulence.dependencies]
+abricate = ">=1.0.1"
+
+[feature.rgi.dependencies]
+rgi = ">=6.0"
+
+[feature.secondary-metabolites.dependencies]
+antismash = ">=7.1.0"
+blast-legacy = ">=2.2.26"
+glimmer = ">=3.02"
+pfam_scan = ">=1.6"
+perl-bioperl = ">=1.7"
+perl-dbi = "*"
+hmmer = "*"
+blast = "*"
+prodigal = "*"
+transtermhp = "*"
+moods = "*"
+
+[feature.r-drawing.dependencies]
+r-base = ">=4.3"
+r-optparse = "*"
+r-ggplot2 = "*"
+r-plotly = "*"
+r-dt = "*"
+r-htmlwidgets = "*"
+r-dplyr = "*"
+r-rcolorbrewer = "*"
+r-ggpubr = "*"
+r-tidyverse = "*"
+r-svglite = "*"
+r-viridis = "*"
+r-jsonlite = "*"
+r-ape = "*"
+r-phytools = "*"
+bioconductor-ggtree = "*"
+bioconductor-keggrest = "*"
+r-gt = "*"
+
 # --- ENVIRONMENTS ---
 [environments]
 qc = ["qc"]
@@ -93,5 +142,9 @@ plasmid = ["plasmid"]
 functional = ["functional"]
 taxonomy = ["taxonomy"]
 tree = ["tree"]
-report = ["report"]
+report = ["report", "r-drawing"]
 magpurify = ["magpurify"]
+amr-virulence = ["amr-virulence"]
+rgi = ["rgi"]
+secondary-metabolites = ["secondary-metabolites"]
+r-drawing = ["r-drawing"]

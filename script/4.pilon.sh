@@ -21,13 +21,19 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
 
     fq1="$RESULT_DIR/k2/clean.${SAMPLE}_1.fq.gz"
     fq2="$RESULT_DIR/k2/clean.${SAMPLE}_2.fq.gz"
-    asm="$RESULT_DIR/megahit/${SAMPLE}_assembly/final.contigs.fa"
+    asm="$RESULT_DIR/assembly/${SAMPLE}_assembly/final.contigs.fa"
     workdir="$RESULT_DIR/bwa_pilon/${SAMPLE}"
     
     mkdir -p "$workdir"
 
     # --- Check for Final Output ---
     final_fasta="${workdir}/${SAMPLE}_pilon.fasta"
+    if [[ "$RUN_POLISHING" != "true" ]]; then
+        echo "Polishing is disabled (RUN_POLISHING=false). Forwarding raw assembly directly..."
+        cp "$asm" "$final_fasta"
+        continue
+    fi
+
     if [[ -s "$final_fasta" ]]; then
         echo "--- Final Pilon file already exists, skipping $SAMPLE ---"
         continue

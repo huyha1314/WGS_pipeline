@@ -18,9 +18,11 @@ mkdir -p "$OUT_DIR" "$LOG_DIR"
 # Explicitly override the eggnog data directory environment variable
 export EGGNOG_DATA_DIR="$EGGNOG_DB_PATH"
 
-for faa_file in "$ANNOTATION_DIR"/*/*.faa; do
-    [ -e "$faa_file" ] || continue
-    SAMPLE=$(basename "$faa_file" .faa)
+for sample_dir in "$ANNOTATION_DIR"/*; do
+    [ -d "$sample_dir" ] || continue
+    SAMPLE=$(basename "$sample_dir")
+    faa_file="${sample_dir}/${SAMPLE}.faa"
+    [ -f "$faa_file" ] || continue
     
     echo "=== Running eggNOG-mapper on $SAMPLE ==="
     

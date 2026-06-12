@@ -10,7 +10,7 @@ mkdir -p "$LOCAL_LOG_DIR"
 TIMELINE_FILE="$LOCAL_LOG_DIR/timeline.log"
 
 echo "====================================================="
-echo "  PRECISIONGENE WGS PIPELINE - LOCAL SEQUENTIAL RUN  "
+echo "  PRECISIONGENE WGS PIPELINE - LOCAL UPSTREAM RUN    "
 echo "====================================================="
 echo "Configured Workspace: $WORKDIR"
 echo "Results Directory:    $RESULT_DIR"
@@ -21,7 +21,7 @@ echo "====================================================="
 
 # Initialize timeline log header
 echo "=====================================================" >> "$TIMELINE_FILE"
-echo "   WGS PIPELINE RUN - $(date '+%Y-%m-%d %H:%M:%S')" >> "$TIMELINE_FILE"
+echo "   WGS PIPELINE UPSTREAM RUN - $(date '+%Y-%m-%d %H:%M:%S')" >> "$TIMELINE_FILE"
 echo "=====================================================" >> "$TIMELINE_FILE"
 
 # Check if samples sheet exists
@@ -55,7 +55,6 @@ format_duration() {
 }
 
 # --- Smart Job Execution Function ---
-# Syntax: run_job <Step_Name> <Script_File> <Expected_Output_Path>
 run_job() {
     local step_name="$1"
     local script_file="$2"
@@ -89,9 +88,9 @@ run_job() {
         
         echo "$start_time_str - [START] $step_name" >> "$TIMELINE_FILE"
         
-        # Execute script locally in the foreground and log output to file while showing in console
-        bash "$script_file" 2>&1 | tee "$log_file"
-        local exit_code=${PIPESTATUS[0]} # Get exit status of bash command, not tee
+        # Execute script locally in the foreground and log output to file
+        bash "$script_file" > "$log_file" 2>&1
+        local exit_code=$?
         
         local end_epoch=$(date +%s)
         local end_time_str=$(date '+%Y-%m-%d %H:%M:%S')
@@ -141,56 +140,20 @@ run_job "MetaBAT2" "$SCRIPT_DIR/6.5.metabat2.sh" "$RESULT_DIR/binned_assemblies/
 # 8.1. Genome Statistics & Quality - CheckM (Original Bins)
 run_job "CheckM" "$SCRIPT_DIR/8.1.checkm.sh" "$RESULT_DIR/checkm/checkm_success.flag"
 
-# 8.2. Taxonomy Classification - GTDB-Tk (Original Bins)
-run_job "GTDB-Tk" "$SCRIPT_DIR/8.2.gtdbtk.sh" "$RESULT_DIR/gtdbtk/gtdbtk_success.flag"
-
-if [[ "$RUN_MAGPURIFY" == "true" ]]; then
-    echo "MAGpurify contamination removal is ENABLED."
-    
-    # 8.5. Genome Refinement - MAGpurify
-    run_job "MAGpurify" "$SCRIPT_DIR/8.5.magpurify.sh" "$RESULT_DIR/refined_assemblies/magpurify_success.flag"
-
-    # 8.6. Quality Verification - CheckM (Cleaned Bins)
-    run_job "CheckM_Cleaned" "$SCRIPT_DIR/8.6.checkm_cleaned.sh" "$RESULT_DIR/checkm_cleaned/checkm_success.flag"
-
-    # 8.7. Taxonomy Classification - GTDB-Tk (Cleaned Bins)
-    run_job "GTDB-Tk_Cleaned" "$SCRIPT_DIR/8.7.gtdbtk_cleaned.sh" "$RESULT_DIR/gtdbtk_cleaned/gtdbtk_success.flag"
-else
-    echo "MAGpurify contamination removal is DISABLED. Skipping refinement and post-cleaning verification."
-fi
-
-# 7. Gene Prediction - Bakta
-run_job "Bakta" "$SCRIPT_DIR/7.bakta.sh" "$RESULT_DIR/annotation/bakta_success.flag"
-
-# 9. Functional Annotation - eggNOG
-run_job "EggNOG" "$SCRIPT_DIR/9.eggnog.sh" "$RESULT_DIR/eggnog/eggnog_success.flag"
-
-# 10. Genome Statistics - BUSCO
-run_job "BUSCO" "$SCRIPT_DIR/10.busco.sh" "$RESULT_DIR/busco/busco_success.flag"
-
-# 11. Plasmid & Virus Prediction - geNomad & CheckV
-run_job "Plasmid_Virus_Prediction" "$SCRIPT_DIR/10.5.plasmid_prediction.sh" "$RESULT_DIR/genomad/genomad_success.flag"
-
-# 11.5. AMR & Virulence Gene Finding
-if [[ "$RUN_AMR_VIRULENCE" == "true" ]]; then
-    run_job "AMR_Virulence" "$SCRIPT_DIR/10.6.amr_virulence.sh" "$RESULT_DIR/amr_virulence/amr_virulence_success.flag"
-fi
-
-# 11.6. Secondary Metabolite & Bacteriocin Analysis
-if [[ "$RUN_ANTISMASH" == "true" || "$RUN_BAGEL4" == "true" ]]; then
-    run_job "Secondary_Metabolites" "$SCRIPT_DIR/10.7.secondary_metabolites.sh" "$RESULT_DIR/secondary_metabolites/secondary_metabolites_success.flag"
-fi
-
-# 12. Reference Phylogenomic Tree Building - GTDB-Tk & IQ-TREE
-run_job "Phylogeny_Tree" "$SCRIPT_DIR/12.build_tree.sh" "$RESULT_DIR/tree/tree_success.flag"
-
-# 13. Generate R Visualizations
-run_job "Genomic_Visualizations" "$SCRIPT_DIR/13.draw.sh" "$RESULT_DIR/rp/draw_success.flag"
-
-# 14. Render Quarto Report HTML
-run_job "Report_Render" "$SCRIPT_DIR/14.render_report.sh" "$RESULT_DIR/rp/report_success.flag"
-
-echo "====================================================="
-echo "Pipeline sequential execution complete!"
-echo "All outputs are available in $RESULT_DIR"
-echo "====================================================="
+echo "================================================================================"
+echo "                   UPSTREAM PIPELINE EXECUTION COMPLETE!                        "
+echo "================================================================================"
+echo "CheckM quality control has finished."
+echo "Please review the report at:"
+echo "  CheckM summary: $RESULT_DIR/checkm/checkm_summary.txt"
+echo ""
+echo "To filter out/select which bins/assemblies to carry forward to the downstream steps:"
+echo "1. Go to the collected assemblies directory:"
+echo "   cd $RESULT_DIR/collected_assemblies"
+echo "2. Look at the FASTA files in that directory. They correspond to original polished"
+echo "   assemblies and individual MetaBAT2/MaxBin2 bins."
+echo "3. Delete or move any files you wish to discard/filter out (e.g., using test.sh)."
+echo "4. Once only the desired bins/assemblies remain in that folder, run the downstream"
+echo "   pipeline using:"
+echo "   pixi run run-pipeline-local-downstream"
+echo "================================================================================"

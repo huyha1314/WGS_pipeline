@@ -3,7 +3,7 @@
 #SBATCH --output=log/gtdbtk_%j.out
 #SBATCH --error=log/gtdbtk_%j.err
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=40
+#SBATCH --cpus-per-task=56
 #SBATCH --mem=350G 
 
 # --- Load Configuration ---

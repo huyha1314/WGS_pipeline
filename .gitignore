@@ -8,8 +8,13 @@ log/*
 data/*
 busco_downloads/*
 rp/*
+db/*
+02_Functional/*
 *.txt
 *.qmd
+!14.rp.qmd
+!14.rp_purine_project.qmd
 *.pdf
 *.log
 *.tsv
+

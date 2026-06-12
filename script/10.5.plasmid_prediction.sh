@@ -3,7 +3,7 @@
 #SBATCH --output=log/plasmid_%j.out
 #SBATCH --error=log/plasmid_%j.err
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=40
+#SBATCH --cpus-per-task=56
 #SBATCH --mem=120G
 
 # --- Load Configuration ---
@@ -45,6 +45,7 @@ for assembly in "$IN_DIR"/*.fasta; do
         pixi run -e plasmid genomad end-to-end \
             --cleanup \
             --splits 4 \
+            --threads "$CPUS_MED" \
             "$assembly" \
             "$sample_genomad_out" \
             "$GENOMAD_DB_PATH"
@@ -67,7 +68,7 @@ for assembly in "$IN_DIR"/*.fasta; do
                 "$virus_fna" \
                 "$sample_checkv_out" \
                 -d "$CHECKV_DB_PATH" \
-                --threads "$CPUS_MED"
+                -t "$CPUS_MED"
                 
             echo " -> CheckV completed for $SAMPLE."
         fi
