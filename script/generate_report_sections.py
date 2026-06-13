@@ -424,7 +424,34 @@ def main():
         busco_md.append("::: {.panel-tabset}\n")
         for b in grouped[base]:
             species_suffix = f" ({bin_to_species[b]})" if b in bin_to_species else ""
+            
+            # Try to get the lineage name dynamically from the JSON
+            lineage_name = "Unknown"
+            busco_dir = os.path.join(collected_dir, "..", "busco", f"{b}_busco")
+            import json
+            json_candidates = glob.glob(os.path.join(busco_dir, "short_summary.*.json"))
+            if not json_candidates:
+                json_candidates = glob.glob(os.path.join(busco_dir, "**", "short_summary.json"), recursive=True)
+            if json_candidates:
+                try:
+                    with open(json_candidates[0], "r") as jf:
+                        jdata = json.load(jf)
+                        lineage_dict = jdata.get("lineage_dataset", {})
+                        if isinstance(lineage_dict, dict):
+                            lineage_name = lineage_dict.get("name", "Unknown")
+                        else:
+                            lineage_name = os.path.basename(lineage_dict)
+                        if lineage_name == "Unknown":
+                            lineage_name = os.path.basename(jdata.get("parameters", {}).get("lineage_dataset", "Unknown"))
+                except Exception:
+                    pass
+            
             busco_md.append(f"### Bin {b}{species_suffix}\n")
+            if lineage_name != "Unknown":
+                busco_md.append(f"<div class=\"callout callout-note\" style=\"border-left: 5px solid #148F77; background-color: #f4fbf9; padding: 10px; margin-bottom: 15px; border-radius: 4px;\">\n")
+                busco_md.append(f"  <b>BUSCO Reference Lineage Dataset:</b> <code>{lineage_name}</code>\n")
+                busco_md.append(f"</div>\n\n")
+                
             busco_md.append("```{=html}\n")
             busco_md.append(f'<iframe width="100%" height="800" src="01_BUSCO/{b}_BUSCO_Report.html" title="BUSCO Summary - {b}" data-external="1" style="border:none;"></iframe>\n')
             busco_md.append("<br>\n")
