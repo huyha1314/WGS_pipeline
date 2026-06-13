@@ -429,7 +429,9 @@ def main():
             lineage_name = "Unknown"
             busco_dir = os.path.join(collected_dir, "..", "busco", f"{b}_busco")
             import json
-            json_candidates = glob.glob(os.path.join(busco_dir, "short_summary.*.json"))
+            json_candidates = glob.glob(os.path.join(busco_dir, "short_summary.specific.*.json"))
+            if not json_candidates:
+                json_candidates = glob.glob(os.path.join(busco_dir, "short_summary.*.json"))
             if not json_candidates:
                 json_candidates = glob.glob(os.path.join(busco_dir, "**", "short_summary.json"), recursive=True)
             if json_candidates:
