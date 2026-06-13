@@ -37,7 +37,7 @@ echo "Total bins collected: $(ls $GOOD_BINS_DIR | wc -l)"
 # --- Step 2: Run GTDB-Tk ---
 echo "Running GTDB-Tk Classify Workflow..."
 
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy gtdbtk classify_wf \
+pixi run -e taxonomy gtdbtk classify_wf \
     --genome_dir "$GOOD_BINS_DIR" \
     --out_dir "$GTDB_OUT_DIR" \
     --extension fa \

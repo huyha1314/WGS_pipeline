@@ -15,21 +15,21 @@ echo "====================================================================="
 
 # Download CARD
 echo "--> Downloading CARD database..."
-if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e amr-virulence abricate-get_db --db card --dbdir "$ABRICATE_DB_DIR" --force; then
+if ! pixi run -e amr-virulence abricate-get_db --db card --dbdir "$ABRICATE_DB_DIR" --force; then
     echo "ERROR: Failed to download CARD database."
     exit 1
 fi
 
 # Download ResFinder
 echo "--> Downloading ResFinder database..."
-if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e amr-virulence abricate-get_db --db resfinder --dbdir "$ABRICATE_DB_DIR" --force; then
+if ! pixi run -e amr-virulence abricate-get_db --db resfinder --dbdir "$ABRICATE_DB_DIR" --force; then
     echo "ERROR: Failed to download ResFinder database."
     exit 1
 fi
 
 # Download VFDB
 echo "--> Downloading VFDB database..."
-if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e amr-virulence abricate-get_db --db vfdb --dbdir "$ABRICATE_DB_DIR" --force; then
+if ! pixi run -e amr-virulence abricate-get_db --db vfdb --dbdir "$ABRICATE_DB_DIR" --force; then
     echo "ERROR: Failed to download VFDB database."
     exit 1
 fi
@@ -61,15 +61,15 @@ echo "--> Extracting card.json..."
 tar -xjf "$RGI_DB_DIR/card_data.tar.bz2" -C "$RGI_DB_DIR" card.json
 
 echo "--> Loading CARD database into RGI..."
-if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e rgi rgi load --card_json "$RGI_DB_DIR/card.json"; then
+if ! pixi run -e rgi rgi load --card_json "$RGI_DB_DIR/card.json"; then
     echo "ERROR: Failed to load CARD database into RGI."
     exit 1
 fi
 
 echo ""
 echo "=== Setup complete! Available databases in ABRicate: ==="
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e amr-virulence abricate --datadir "$ABRICATE_DB_DIR" --list
+pixi run -e amr-virulence abricate --datadir "$ABRICATE_DB_DIR" --list
 echo ""
 echo "=== Setup complete! RGI CARD database version: ==="
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e rgi rgi database --version
+pixi run -e rgi rgi database --version
 echo "====================================================================="

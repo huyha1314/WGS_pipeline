@@ -50,7 +50,7 @@ for assembly in "$IN_DIR"/*.fasta; do
     # Run CARD
     if [[ ! -f "$OUT_DIR/${SAMPLE}_card.tsv" ]]; then
         echo "    Running CARD..."
-        if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e amr-virulence abricate --datadir "$ABRICATE_DB_DIR" --db card --threads "$CPUS_MIN" "$assembly" > "$OUT_DIR/${SAMPLE}_card.tsv"; then
+        if ! pixi run -e amr-virulence abricate --datadir "$ABRICATE_DB_DIR" --db card --threads "$CPUS_MIN" "$assembly" > "$OUT_DIR/${SAMPLE}_card.tsv"; then
             echo "WARNING: ABRicate CARD failed for sample: $SAMPLE"
         fi
     else
@@ -60,7 +60,7 @@ for assembly in "$IN_DIR"/*.fasta; do
     # Run ResFinder
     if [[ ! -f "$OUT_DIR/${SAMPLE}_resfinder.tsv" ]]; then
         echo "    Running ResFinder..."
-        if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e amr-virulence abricate --datadir "$ABRICATE_DB_DIR" --db resfinder --threads "$CPUS_MIN" "$assembly" > "$OUT_DIR/${SAMPLE}_resfinder.tsv"; then
+        if ! pixi run -e amr-virulence abricate --datadir "$ABRICATE_DB_DIR" --db resfinder --threads "$CPUS_MIN" "$assembly" > "$OUT_DIR/${SAMPLE}_resfinder.tsv"; then
             echo "WARNING: ABRicate ResFinder failed for sample: $SAMPLE"
         fi
     else
@@ -70,7 +70,7 @@ for assembly in "$IN_DIR"/*.fasta; do
     # Run VFDB
     if [[ ! -f "$OUT_DIR/${SAMPLE}_vfdb.tsv" ]]; then
         echo "    Running VFDB..."
-        if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e amr-virulence abricate --datadir "$ABRICATE_DB_DIR" --db vfdb --threads "$CPUS_MIN" "$assembly" > "$OUT_DIR/${SAMPLE}_vfdb.tsv"; then
+        if ! pixi run -e amr-virulence abricate --datadir "$ABRICATE_DB_DIR" --db vfdb --threads "$CPUS_MIN" "$assembly" > "$OUT_DIR/${SAMPLE}_vfdb.tsv"; then
             echo "WARNING: ABRicate VFDB failed for sample: $SAMPLE"
         fi
     else
@@ -80,7 +80,7 @@ for assembly in "$IN_DIR"/*.fasta; do
     # Run RGI (Resistance Gene Identifier)
     if [[ ! -f "$OUT_DIR/${SAMPLE}_rgi.txt" ]]; then
         echo "    Running RGI..."
-        if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e rgi rgi main --input_sequence "$assembly" --output_file "$OUT_DIR/${SAMPLE}_rgi" --input_type contig --num_threads "$CPUS_MIN" --clean; then
+        if ! pixi run -e rgi rgi main --input_sequence "$assembly" --output_file "$OUT_DIR/${SAMPLE}_rgi" --input_type contig --num_threads "$CPUS_MIN" --clean; then
             echo "WARNING: RGI failed for sample: $SAMPLE"
         fi
     else

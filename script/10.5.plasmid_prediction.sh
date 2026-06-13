@@ -42,7 +42,7 @@ for assembly in "$IN_DIR"/*.fasta; do
         # Clean up partial output folder if exists
         rm -rf "$sample_genomad_out"
         
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e plasmid genomad end-to-end \
+        pixi run -e plasmid genomad end-to-end \
             --cleanup \
             --splits 4 \
             --threads "$CPUS_MED" \
@@ -64,7 +64,7 @@ for assembly in "$IN_DIR"/*.fasta; do
             echo " -> Virus sequences found! Running CheckV quality assessment..."
             rm -rf "$sample_checkv_out"
             
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e plasmid checkv end_to_end \
+            pixi run -e plasmid checkv end_to_end \
                 "$virus_fna" \
                 "$sample_checkv_out" \
                 -d "$CHECKV_DB_PATH" \

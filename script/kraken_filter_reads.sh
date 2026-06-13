@@ -90,7 +90,7 @@ KRAKEN_OUT="$RESULT_DIR/k2/${SRC_SAMPLE}.kraken.txt"
 if [[ ! -f "$KRAKEN_OUT" || ! -f "$KRAKEN_REPORT" ]]; then
     echo "Running Kraken2 classification on $SRC_SAMPLE..."
     mkdir -p "$RESULT_DIR/k2"
-    pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree kraken2 \
+    pixi run -e tree kraken2 \
         --db "$KRAKEN2_DB_PATH" \
         --paired "$R1_IN" "$R2_IN" \
         --threads "$CPUS_MED" \
@@ -122,7 +122,7 @@ else
 fi
 rm -f "$OUT_R1_RAW" "$OUT_R2_RAW" "$OUT_R1_GZ" "$OUT_R2_GZ"
 
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree extract_kraken_reads.py \
+pixi run -e tree extract_kraken_reads.py \
     -k "$KRAKEN_OUT" \
     -r "$KRAKEN_REPORT" \
     -s "$R1_IN" \
@@ -142,8 +142,8 @@ fi
 
 # --- Step 4: Compress Extracted Reads ---
 echo "Compressing extracted reads..."
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e default pigz -p "$CPUS_MED" "$OUT_R1_RAW"
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e default pigz -p "$CPUS_MED" "$OUT_R2_RAW"
+pixi run -e default pigz -p "$CPUS_MED" "$OUT_R1_RAW"
+pixi run -e default pigz -p "$CPUS_MED" "$OUT_R2_RAW"
 
 if [[ ! -f "$OUT_R1_GZ" ]]; then
     echo "ERROR: Compression failed."
@@ -167,6 +167,6 @@ echo "Registered path R1:    $OUT_R1_GZ"
 echo "Registered path R2:    $OUT_R2_GZ"
 echo ""
 echo "To assemble and process this specific organism, run:"
-echo "  pixi run --manifest-path "$WORKDIR/pixi.toml" run-pipeline-local-upstream"
+echo "  pixi run run-pipeline-local-upstream"
 echo "======================================================="
 chmod +x "$0"

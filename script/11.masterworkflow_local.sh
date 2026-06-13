@@ -27,7 +27,7 @@ echo "=====================================================" >> "$TIMELINE_FILE"
 # Check if samples sheet exists
 if [[ ! -f "$INPUT_SHEET" ]]; then
     echo "ERROR: Samples sheet not found at $INPUT_SHEET."
-    echo "Please run 'pixi run --manifest-path "$WORKDIR/pixi.toml" create-sheet -i <data_directory>' first to create it."
+    echo "Please run 'pixi run create-sheet -i <data_directory>' first to create it."
     exit 1
 fi
 

@@ -59,7 +59,7 @@ for assembly in "$IN_DIR"/*.fasta; do
 
         if [[ ! -f "$OUT_DIR/antismash/${SAMPLE}/index.html" ]]; then
             echo "    Running antiSMASH on $GBK_FILE..."
-            if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites antismash \
+            if ! pixi run -e secondary-metabolites antismash \
                 --databases "$ANTISMASH_DB_DIR" \
                 --genefinding-tool none \
                 --cb-general \
@@ -91,7 +91,7 @@ for assembly in "$IN_DIR"/*.fasta; do
             
             # BAGEL4 wrapper requires running from its folder or setting config correctly
             # We run it using perl wrapper
-            if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites perl "$BAGEL4_DIR/bagel4_wrapper.pl" \
+            if ! pixi run -e secondary-metabolites perl "$BAGEL4_DIR/bagel4_wrapper.pl" \
                 -query "$assembly" \
                 -s "$OUT_DIR/bagel4/${SAMPLE}" \
                 -cpu "$CPUS_MIN"; then

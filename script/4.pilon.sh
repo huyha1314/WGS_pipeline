@@ -54,19 +54,19 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
         # 1. Indexing (BWA + Samtools FAI)
         if [[ ! -f "${asm}.bwt" || ! -f "${asm}.fai" ]]; then
             echo "--- Indexing Assembly for $SAMPLE ---"
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly bwa index "$asm"
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools faidx "$asm"
+            pixi run -e assembly bwa index "$asm"
+            pixi run -e assembly samtools faidx "$asm"
         fi
 
         # 2. Alignment (BWA mem + Samtools sort)
         echo "--- Aligning reads for $SAMPLE ---"
         # Using 36 threads for bwa mem + 10 threads for samtools sort = 46 threads total
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly bwa mem -t 36 "$asm" "$fq1" "$fq2" | \
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools sort -@ 10 -m 4G -o "${workdir}/${SAMPLE}.sorted.bam" -
+        pixi run -e assembly bwa mem -t 36 "$asm" "$fq1" "$fq2" | \
+            pixi run -e assembly samtools sort -@ 10 -m 4G -o "${workdir}/${SAMPLE}.sorted.bam" -
 
         # 3. Index BAM
         echo "--- Indexing BAM for $SAMPLE ---"
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools index "${workdir}/${SAMPLE}.sorted.bam"
+        pixi run -e assembly samtools index "${workdir}/${SAMPLE}.sorted.bam"
     else
         echo "--- Found existing BAM for $SAMPLE ---"
     fi
@@ -74,7 +74,7 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
     # --- Step 3: Pilon Polishing ---
     echo "--- Running Pilon for $SAMPLE ---"
     # Using 48 threads and setting heap memory to 160G (configured for 180G RAM node)
-    pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly pilon \
+    pixi run -e assembly pilon \
         --genome "$asm" \
         --frags "${workdir}/${SAMPLE}.sorted.bam" \
         --output "${SAMPLE}_pilon" \

@@ -55,13 +55,13 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH GENUS SPECIES; do
         echo "--> Mapping reads to polished assembly..."
         
         # Index assembly
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly bwa index "$assembly"
+        pixi run -e assembly bwa index "$assembly"
         
         # Map and Sort (using CPUS_MED for mem, CPUS_MIN for sort)
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly bwa mem -t "$CPUS_MED" "$assembly" "$fq1" "$fq2" | \
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools sort -@ "$CPUS_MIN" -m 4G -o "$bam_file" -
+        pixi run -e assembly bwa mem -t "$CPUS_MED" "$assembly" "$fq1" "$fq2" | \
+            pixi run -e assembly samtools sort -@ "$CPUS_MIN" -m 4G -o "$bam_file" -
         
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools index "$bam_file"
+        pixi run -e assembly samtools index "$bam_file"
     else
         echo "--> BAM exists, skipping mapping."
     fi
@@ -72,12 +72,12 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH GENUS SPECIES; do
         mkdir -p "$bin_dir"
 
         # Calculate coverage
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy jgi_summarize_bam_contig_depths \
+        pixi run -e taxonomy jgi_summarize_bam_contig_depths \
             --outputDepth "$depth_file" \
             "$bam_file"
 
         # Run Binning
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy metabat2 \
+        pixi run -e taxonomy metabat2 \
             -i "$assembly" \
             -a "$depth_file" \
             -o "${bin_dir}/${SAMPLE}_bin" \
@@ -99,7 +99,7 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH GENUS SPECIES; do
             tail -n +2 "$depth_file" | cut -f1,3 > "$abund_file"
             
             # Run MaxBin2
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy run_MaxBin.pl \
+            pixi run -e taxonomy run_MaxBin.pl \
                 -contig "$assembly" \
                 -abund "$abund_file" \
                 -out "${maxbin_dir}/${SAMPLE}_maxbin" \
@@ -125,8 +125,8 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH GENUS SPECIES; do
         metabat_tsv="${dastool_dir}/metabat.scaffolds2bin.tsv"
         maxbin_tsv="${dastool_dir}/maxbin.scaffolds2bin.tsv"
         
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy Fasta_to_Scaffolds2Bin.sh -i "$bin_dir" -e fa > "$metabat_tsv" 2>/dev/null
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy Fasta_to_Scaffolds2Bin.sh -i "$maxbin_dir" -e fasta > "$maxbin_tsv" 2>/dev/null
+        pixi run -e taxonomy Fasta_to_Scaffolds2Bin.sh -i "$bin_dir" -e fa > "$metabat_tsv" 2>/dev/null
+        pixi run -e taxonomy Fasta_to_Scaffolds2Bin.sh -i "$maxbin_dir" -e fasta > "$maxbin_tsv" 2>/dev/null
         
         # 3.2: Validate TSVs to prevent DAS Tool crashes if a binner failed to find bins
         valid_tsvs=""
@@ -151,7 +151,7 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH GENUS SPECIES; do
         if [[ -n "$valid_tsvs" ]]; then
             echo "--> Running DAS Tool to merge and purify [$valid_labels] bins..."
             # Using diamond as search engine for speed
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy DAS_Tool -i "$valid_tsvs" \
+            pixi run -e taxonomy DAS_Tool -i "$valid_tsvs" \
                 -l "$valid_labels" \
                 -c "$assembly" \
                 -o "${dastool_dir}/${SAMPLE}_das" \

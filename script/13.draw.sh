@@ -153,7 +153,7 @@ for fasta in "$RESULT_DIR/collected_assemblies"/*.fasta; do
             BUSCO_JSON=$(find "$RESULT_DIR/busco/${SAMPLE}_busco" -name "short_summary.specific.*.${SAMPLE}_busco.json" | head -n 1)
             if [[ -f "$BUSCO_JSON" ]]; then
                 echo "  -> Running BUSCO visualization for $SAMPLE..."
-                pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/busco.R" \
+                pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/busco.R" \
                     --input "$BUSCO_JSON" \
                     --output "$BASE_OUTDIR/01_BUSCO/${SAMPLE}_BUSCO_Report" \
                     --format "html,pdf"
@@ -164,7 +164,7 @@ for fasta in "$RESULT_DIR/collected_assemblies"/*.fasta; do
             if [[ -f "$EGGNOG_ANNOT" ]]; then
                 echo "  -> Running EggNOG/KEGG visualization for $SAMPLE..."
                 mkdir -p "$BASE_OUTDIR/02_Functional/${SAMPLE}"
-                pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/eggnog.R" \
+                pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/eggnog.R" \
                     --eggnog "$EGGNOG_ANNOT" \
                     --outdir "$BASE_OUTDIR/02_Functional/${SAMPLE}"
             fi
@@ -174,7 +174,7 @@ for fasta in "$RESULT_DIR/collected_assemblies"/*.fasta; do
             BAKTA_TXT="$RESULT_DIR/annotation/${SAMPLE}/${SAMPLE}.txt"
             if [[ -f "$BAKTA_TSV" ]]; then
                 echo "  -> Running Bakta visualization for $SAMPLE..."
-                pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/batka.R" \
+                pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/batka.R" \
                     --input "$BAKTA_TSV" \
                     --summary "$BAKTA_TXT" \
                     --output "$BASE_OUTDIR/03_Bakta/${SAMPLE}_bakta_report.html"
@@ -188,17 +188,17 @@ for fasta in "$RESULT_DIR/collected_assemblies"/*.fasta; do
             VIRUS_TSV="$RESULT_DIR/genomad/${SAMPLE}/${SAMPLE}_summary/${SAMPLE}_virus_summary.tsv"
             CHECKV_TSV="$RESULT_DIR/checkv/${SAMPLE}/quality_summary.tsv"
             
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
+            pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
                 -i "$PLASMID_TSV" \
                 -o "$BASE_OUTDIR/08_MGEs/$SAMPLE/plasmid_table.html" \
                 -t "Plasmid Summary (geNomad)"
                 
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
+            pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
                 -i "$VIRUS_TSV" \
                 -o "$BASE_OUTDIR/08_MGEs/$SAMPLE/virus_table.html" \
                 -t "Virus Summary (geNomad)"
                 
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
+            pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
                 -i "$CHECKV_TSV" \
                 -o "$BASE_OUTDIR/08_MGEs/$SAMPLE/checkv_table.html" \
                 -t "Virus Quality (CheckV)"
@@ -207,22 +207,22 @@ for fasta in "$RESULT_DIR/collected_assemblies"/*.fasta; do
             echo "  -> Running AMR & Virulence tables visualization for $SAMPLE..."
             mkdir -p "$BASE_OUTDIR/06_AMR_Virulence/$SAMPLE"
             
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
+            pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
                 -i "$RESULT_DIR/amr_virulence/${SAMPLE}_card.tsv" \
                 -o "$BASE_OUTDIR/06_AMR_Virulence/$SAMPLE/card_table.html" \
                 -t "CARD Database (Antibiotic Resistance) - $SAMPLE"
                 
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
+            pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
                 -i "$RESULT_DIR/amr_virulence/${SAMPLE}_resfinder.tsv" \
                 -o "$BASE_OUTDIR/06_AMR_Virulence/$SAMPLE/resfinder_table.html" \
                 -t "ResFinder Database (Antibiotic Resistance) - $SAMPLE"
                 
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
+            pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
                 -i "$RESULT_DIR/amr_virulence/${SAMPLE}_vfdb.tsv" \
                 -o "$BASE_OUTDIR/06_AMR_Virulence/$SAMPLE/vfdb_table.html" \
                 -t "VFDB Database (Virulence Factors) - $SAMPLE"
                 
-            pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
+            pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/mge_table.R" \
                 -i "$RESULT_DIR/amr_virulence/${SAMPLE}_rgi.txt" \
                 -o "$BASE_OUTDIR/06_AMR_Virulence/$SAMPLE/rgi_table.html" \
                 -t "RGI CARD Database (Antibiotic Resistance) - $SAMPLE"
@@ -234,20 +234,20 @@ done
 wait
 
 echo "Running KEGG Pathway comparison heatmap..."
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/kegg_heatmap.R" \
+pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/kegg_heatmap.R" \
     -i "$BASE_OUTDIR/02_Functional" \
     -o "$BASE_OUTDIR/02_Functional/kegg_pathway_heatmap.html"
 
 # C.2. Run Kraken2 Abundance Report (Only once, covers all samples)
 echo "Running Kraken2 Abundance visualization..."
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/kraken_vis.R" \
+pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/kraken_vis.R" \
     -i "$RESULT_DIR" \
     -o "$BASE_OUTDIR/00_QC"
 
 # D. Run Assembly Taxonomy Report (Only once, covers all bins)
 if [[ -f "$CHECKM_TSV" && -f "$GTDB_TSV" ]]; then
     echo "Running Assembly Taxonomy visualization..."
-    pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/assembly_tax.R" \
+    pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/assembly_tax.R" \
         --checkm "$CHECKM_TSV" \
         --gtdbtk "$GTDB_TSV" \
         --out "$BASE_OUTDIR/04_Taxonomy/taxonomy_report"
@@ -258,7 +258,7 @@ FIRST_ANNOTATED_TREE=$(find "$RESULT_DIR/tree" -name "*_annotated_tree.treefile"
 if [[ -f "$FIRST_ANNOTATED_TREE" ]]; then
     echo "Running Phylogenetic Tree visualization..."
     cp -p "$FIRST_ANNOTATED_TREE" "$DATA_OUTDIR/"
-    pixi run --manifest-path "$WORKDIR/pixi.toml" -e r-drawing Rscript "$VIS_SCRIPT_DIR/tree.R" \
+    pixi run -e r-drawing Rscript "$VIS_SCRIPT_DIR/tree.R" \
         -i "$FIRST_ANNOTATED_TREE" \
         -g "$GTDB_TSV" \
         -o "$BASE_OUTDIR/05_Phylogeny/${BATCH_NAME}_final_publication_tree"

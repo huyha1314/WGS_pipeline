@@ -33,7 +33,7 @@ for sample_dir in "$ANNOTATION_DIR"/*; do
     fi
 
     # Run eggNOG-mapper in the functional environment
-    pixi run --manifest-path "$WORKDIR/pixi.toml" -e functional emapper.py \
+    pixi run -e functional emapper.py \
         -i "$faa_file" \
         --output "$SAMPLE" \
         --output_dir "$OUT_DIR" \

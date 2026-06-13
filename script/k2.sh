@@ -21,7 +21,7 @@ for i1 in "$RESULT_DIR/fastp"/*_1.fq.gz; do
     echo "Processing sample: $sample"
     
     # --- Step 4: Extract reads of interest from Kraken2 report ---
-    pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree extract_kraken_reads.py \
+    pixi run -e tree extract_kraken_reads.py \
         -r "$RESULT_DIR/k2/${sample}.report.txt" \
         -k "$RESULT_DIR/k2/${sample}.kraken.txt" \
         -s "$RESULT_DIR/bowtie2/nohuman.${sample}.fq.1.gz" \

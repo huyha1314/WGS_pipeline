@@ -28,9 +28,9 @@ ORIG_DIR="$PWD"
 cd "$RESULT_DIR/rp" || exit 1
 
 # Render the document using the Pixi report environment
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e report quarto render 14.rp.qmd --to html
+pixi run -e report quarto render 14.rp.qmd --to html
 if [[ -f "14.rp_purine_project.qmd" ]]; then
-    pixi run --manifest-path "$WORKDIR/pixi.toml" -e report quarto render 14.rp_purine_project.qmd --to html
+    pixi run -e report quarto render 14.rp_purine_project.qmd --to html
     rm -f 14.rp_purine_project.qmd
 fi
 

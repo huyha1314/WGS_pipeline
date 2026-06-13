@@ -27,7 +27,7 @@ echo "=====================================================" >> "$TIMELINE_FILE"
 # Check if samples sheet exists
 if [[ ! -f "$INPUT_SHEET" ]]; then
     echo "ERROR: Samples sheet not found at $INPUT_SHEET."
-    echo "Please run 'pixi run --manifest-path "$WORKDIR/pixi.toml" create-sheet -i <data_directory>' first to create it."
+    echo "Please run 'pixi run create-sheet -i <data_directory>' first to create it."
     exit 1
 fi
 
@@ -155,5 +155,5 @@ echo "   assemblies and individual MetaBAT2/MaxBin2 bins."
 echo "3. Delete or move any files you wish to discard/filter out (e.g., using test.sh)."
 echo "4. Once only the desired bins/assemblies remain in that folder, run the downstream"
 echo "   pipeline using:"
-echo "   pixi run --manifest-path "$WORKDIR/pixi.toml" run-pipeline-local-downstream"
+echo "   pixi run run-pipeline-local-downstream"
 echo "================================================================================"

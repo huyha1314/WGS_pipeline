@@ -41,7 +41,7 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
         echo "SKIPPING: $SAMPLE (Files already exist)"
     else
         # Add command to file
-        echo "pixi run --manifest-path "$WORKDIR/pixi.toml" -e qc fastp \
+        echo "pixi run -e qc fastp \
             -i \"$R1_PATH\" -I \"$R2_PATH\" \
             -o \"$OUT_R1\" -O \"$OUT_R2\" \
             --trim_front1 $FASTP_TRIM_FRONT1 --trim_front2 $FASTP_TRIM_FRONT2 \
@@ -57,7 +57,7 @@ done < "$INPUT_SHEET"
 if [[ -s "$CMD_FILE" ]]; then
     job_count=$(wc -l < "$CMD_FILE")
     echo "Running $job_count jobs with $PARALLEL_JOBS_FASTP parallel processes..."
-    cat "$CMD_FILE" | pixi run --manifest-path "$WORKDIR/pixi.toml" parallel -j "$PARALLEL_JOBS_FASTP"
+    cat "$CMD_FILE" | pixi run parallel -j "$PARALLEL_JOBS_FASTP"
 else
     echo "All files already processed. No jobs to run."
 fi

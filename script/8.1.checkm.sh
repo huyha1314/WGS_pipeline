@@ -83,10 +83,10 @@ echo "Starting CheckM Lineage Workflow..."
 
 # Configure CheckM data directory first (just in case)
 if [[ -d "$CHECKM_DB_PATH" ]]; then
-    pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy checkm data setRoot "$CHECKM_DB_PATH"
+    pixi run -e taxonomy checkm data setRoot "$CHECKM_DB_PATH"
 fi
 
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy checkm lineage_wf \
+pixi run -e taxonomy checkm lineage_wf \
     -t "$CPUS_MED" \
     -x fasta \
     --pplacer_threads "$CPUS_MAX" \
@@ -99,7 +99,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Generate checkm summary report
-pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy checkm qa \
+pixi run -e taxonomy checkm qa \
     "${CHECKM_OUT_DIR}/lineage.ms" \
     "${CHECKM_OUT_DIR}" \
     -o 2 > "${CHECKM_OUT_DIR}/checkm_summary.txt"
