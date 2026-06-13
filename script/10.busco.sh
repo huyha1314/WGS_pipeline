@@ -39,7 +39,7 @@ for INPUT_FILE in "$BASE_DIR"/*.fasta; do
         echo "Processing $SAMPLE with BUSCO auto-lineage..."
 
         # Run BUSCO in statistics environment
-        pixi run -e statistics busco -i "$INPUT_FILE" \
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e statistics busco -i "$INPUT_FILE" \
               -o "${SAMPLE}_busco" \
               --out_path "$OUT_DIR" \
               --auto-lineage-prok \

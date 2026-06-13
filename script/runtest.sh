@@ -20,8 +20,8 @@ echo "------------------------------------------------------"
 
 # Define an array of the specific bins and their corresponding BUSCO lineages
 declare -A BIN_LINEAGES=(
-    ["85_maxbin.001"]="bacillales_odb10"
-    ["85_maxbin.002"]="lactobacillales_odb10"
+    ["85_maxbin.001"]="bacillales_odb12"
+    ["85_maxbin.002"]="lactobacillales_odb12"
 )
 
 # Iterate through the associative array
@@ -44,7 +44,7 @@ for SAMPLE in "${!BIN_LINEAGES[@]}"; do
         echo "Processing $SAMPLE using specific lineage: $LINEAGE"
 
         # Run BUSCO with explicit lineage
-        pixi run -e statistics busco -i "$INPUT_FILE" \
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e statistics busco -i "$INPUT_FILE" \
               -o "${SAMPLE}_busco" \
               --out_path "$OUT_DIR" \
               -l "$LINEAGE" \
