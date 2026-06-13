@@ -44,7 +44,7 @@ for SAMPLE in "${!BIN_LINEAGES[@]}"; do
         echo "Processing $SAMPLE using specific lineage: $LINEAGE"
 
         # Run BUSCO with explicit lineage
-        pixi run --manifest-path "$WORKDIR/pixi.toml" -e statistics busco -i "$INPUT_FILE" \
+        pixi run -e statistics busco -i "$INPUT_FILE" \
               -o "${SAMPLE}_busco" \
               --out_path "$OUT_DIR" \
               -l "$LINEAGE" \
