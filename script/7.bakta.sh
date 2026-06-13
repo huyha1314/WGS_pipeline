@@ -58,7 +58,7 @@ for assembly in "$IN_DIR"/*.fasta; do
     export OMP_STACKSIZE=256M
 
     # Run Bakta in the Pixi annotation environment
-    if ! pixi run -e annotation bakta \
+    if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e annotation bakta \
         --db "$BAKTA_DB" \
         --output "$sample_out" \
         --prefix "$SAMPLE" \

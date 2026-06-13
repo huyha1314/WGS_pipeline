@@ -12,7 +12,7 @@ echo "====================================================================="
 # --- 1. antiSMASH Databases ---
 echo "--> Setting up antiSMASH Database..."
 mkdir -p "$ANTISMASH_DB_DIR"
-if ! pixi run -e secondary-metabolites download-antismash-databases --database-dir "$ANTISMASH_DB_DIR"; then
+if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites download-antismash-databases --database-dir "$ANTISMASH_DB_DIR"; then
     echo "WARNING: antiSMASH automatic database downloader failed or skipped."
     echo "We will try running antiSMASH with internal checks later."
 fi
@@ -66,7 +66,7 @@ fi
 
 if [ ! -f "${PFAM_HMM}.h3m" ]; then
     echo "Indexing Pfam-A.hmm with hmmpress..."
-    if ! pixi run -e secondary-metabolites hmmpress -f "$PFAM_HMM"; then
+    if ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites hmmpress -f "$PFAM_HMM"; then
         echo "ERROR: Failed to run hmmpress on Pfam-A.hmm."
         exit 1
     fi
@@ -76,12 +76,12 @@ fi
 echo "--> Generating bagel4.conf..."
 
 # Resolve executable paths inside secondary-metabolites environment
-BLASTALL_PATH=$(pixi run -e secondary-metabolites which blastall 2>/dev/null || echo "blastall")
-FORMATDB_PATH=$(pixi run -e secondary-metabolites which formatdb 2>/dev/null || echo "formatdb")
-HMMSEARCH_PATH=$(pixi run -e secondary-metabolites which hmmsearch 2>/dev/null || echo "hmmsearch")
-HMMPRESS_PATH=$(pixi run -e secondary-metabolites which hmmpress 2>/dev/null || echo "hmmpress")
-GLIMMER_PATH=$(pixi run -e secondary-metabolites which glimmer3 2>/dev/null || echo "glimmer3")
-PFAMSCAN_PATH=$(pixi run -e secondary-metabolites which pfam_scan.pl 2>/dev/null || echo "pfam_scan.pl")
+BLASTALL_PATH=$(pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites which blastall 2>/dev/null || echo "blastall")
+FORMATDB_PATH=$(pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites which formatdb 2>/dev/null || echo "formatdb")
+HMMSEARCH_PATH=$(pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites which hmmsearch 2>/dev/null || echo "hmmsearch")
+HMMPRESS_PATH=$(pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites which hmmpress 2>/dev/null || echo "hmmpress")
+GLIMMER_PATH=$(pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites which glimmer3 2>/dev/null || echo "glimmer3")
+PFAMSCAN_PATH=$(pixi run --manifest-path "$WORKDIR/pixi.toml" -e secondary-metabolites which pfam_scan.pl 2>/dev/null || echo "pfam_scan.pl")
 
 cat <<EOF > "$BAGEL4_DIR/bagel4.conf"
 [query]

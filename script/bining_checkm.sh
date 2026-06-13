@@ -41,13 +41,13 @@ for assembly in ${POLISHED_DIR}/*/*_final_polished.fasta; do
         echo "--> Mapping reads to polished assembly..."
         
         # Index assembly
-        pixi run -e assembly bwa index "$assembly"
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly bwa index "$assembly"
         
         # Map and Sort (30 threads map, 10 sort)
-        pixi run -e assembly bwa mem -t 30 "$assembly" "$fq1" "$fq2" | \
-            pixi run -e assembly samtools sort -@ 10 -m 4G -o "$bam_file" -
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly bwa mem -t 30 "$assembly" "$fq1" "$fq2" | \
+            pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools sort -@ 10 -m 4G -o "$bam_file" -
         
-        pixi run -e assembly samtools index "$bam_file"
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools index "$bam_file"
     else
         echo "--> BAM exists, skipping mapping."
     fi
@@ -58,12 +58,12 @@ for assembly in ${POLISHED_DIR}/*/*_final_polished.fasta; do
         mkdir -p "$bin_dir"
 
         # Calculate coverage (jgi_summarize_bam_contig_depths comes with metabat2)
-        pixi run -e taxonomy jgi_summarize_bam_contig_depths \
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy jgi_summarize_bam_contig_depths \
             --outputDepth "$depth_file" \
             "$bam_file"
 
         # Run Binning
-        pixi run -e taxonomy metabat2 \
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy metabat2 \
             -i "$assembly" \
             -a "$depth_file" \
             -o "${bin_dir}/${sample}_bin" \
@@ -79,12 +79,12 @@ for assembly in ${POLISHED_DIR}/*/*_final_polished.fasta; do
         
         # Set database path for CheckM
         if [[ -d "$CHECKM_DB_PATH" ]]; then
-            pixi run -e taxonomy checkm data setRoot "$CHECKM_DB_PATH"
+            pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy checkm data setRoot "$CHECKM_DB_PATH"
         fi
 
         # CheckM uses a lot of RAM. We reduce threads for the 'pplacer' step to avoid crashes.
         # -x fa: tells CheckM looking for files ending in .fa (Metabat output is .fa)
-        pixi run -e taxonomy checkm lineage_wf \
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy checkm lineage_wf \
             -t 40 \
             --pplacer_threads 4 \
             -x fa \

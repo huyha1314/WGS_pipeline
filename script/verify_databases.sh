@@ -91,7 +91,7 @@ if [ -d "$GTDBTK_DATA_PATH" ]; then
         print_status "GTDB-Tk" "MISSING" "Directory exists but required subdirectories (taxonomy, fastani/skani) are missing."
     fi
 else
-    print_status "GTDB-Tk" "MISSING" "Run: pixi run download-db-gtdbtk"
+    print_status "GTDB-Tk" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-gtdbtk"
 fi
 
 # 2. Bakta
@@ -137,7 +137,7 @@ if [ -d "$BAKTA_DB_PATH" ]; then
         print_status "Bakta" "MISSING" "Directory exists but signature files are missing."
     fi
 else
-    print_status "Bakta" "MISSING" "Run: pixi run download-db-bakta"
+    print_status "Bakta" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-bakta"
 fi
 
 # 3. CheckV
@@ -148,7 +148,7 @@ if [ -d "$CHECKV_DB_PATH" ]; then
         print_status "CheckV" "MISSING" "Directory exists but subdirectories are missing."
     fi
 else
-    print_status "CheckV" "MISSING" "Run: pixi run download-db-checkv"
+    print_status "CheckV" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-checkv"
 fi
 
 # 4. CheckM
@@ -158,13 +158,13 @@ if [ -d "$CHECKM_DB_PATH" ]; then
         if [ -d "$HOME/.checkm" ]; then
             print_status "CheckM" "READY"
         else
-            print_status "CheckM" "INCOMPLETE" "Database files present but CheckM path not configured. Run: pixi run -e taxonomy checkm data setRoot $CHECKM_DB_PATH"
+            print_status "CheckM" "INCOMPLETE" "Database files present but CheckM path not configured. Run: pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy checkm data setRoot $CHECKM_DB_PATH"
         fi
     else
         print_status "CheckM" "MISSING" "Directory exists but markers/HMMs are missing."
     fi
 else
-    print_status "CheckM" "MISSING" "Run: pixi run download-db-checkm"
+    print_status "CheckM" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-checkm"
 fi
 
 # 5. geNomad
@@ -175,7 +175,7 @@ if [ -d "$GENOMAD_DB_PATH" ]; then
         print_status "geNomad" "MISSING" "Directory exists but genomad_db files are missing."
     fi
 else
-    print_status "geNomad" "MISSING" "Run: pixi run download-db-genomad"
+    print_status "geNomad" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-genomad"
 fi
 
 # 6. eggNOG
@@ -190,7 +190,7 @@ if [ -d "$EGGNOG_DB_PATH" ]; then
         print_status "eggNOG" "MISSING" "Directory exists but files are missing."
     fi
 else
-    print_status "eggNOG" "MISSING" "Run: pixi run download-db-eggnog"
+    print_status "eggNOG" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-eggnog"
 fi
 
 # 7. Kraken2
@@ -213,7 +213,7 @@ if [ -d "$KRAKEN2_DB_PATH" ]; then
         print_status "Kraken2" "MISSING" "Directory exists but index files are missing."
     fi
 else
-    print_status "Kraken2" "MISSING" "Run: pixi run download-db-kraken2"
+    print_status "Kraken2" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-kraken2"
 fi
 
 # 8. Bowtie2 Human Filtering Index
@@ -237,7 +237,7 @@ if [ -d "$MAGPURIFYDB" ]; then
         print_status "MAGpurify" "MISSING" "Directory exists but database files are missing."
     fi
 else
-    print_status "MAGpurify" "MISSING" "Run: pixi run download-db-magpurify"
+    print_status "MAGpurify" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-magpurify"
 fi
 
 # 10. ABRicate (AMR & Virulence)
@@ -245,10 +245,10 @@ if [ -d "$ABRICATE_DB_DIR" ]; then
     if [ -d "$ABRICATE_DB_DIR/card" ] && [ -d "$ABRICATE_DB_DIR/resfinder" ] && [ -d "$ABRICATE_DB_DIR/vfdb" ]; then
         print_status "ABRicate" "READY"
     else
-        print_status "ABRicate" "MISSING" "Directory exists but CARD, ResFinder, or VFDB is missing. Run: pixi run download-db-amr-virulence"
+        print_status "ABRicate" "MISSING" "Directory exists but CARD, ResFinder, or VFDB is missing. Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-amr-virulence"
     fi
 else
-    print_status "ABRicate" "MISSING" "Run: pixi run download-db-amr-virulence"
+    print_status "ABRicate" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-amr-virulence"
 fi
 
 # 11. antiSMASH
@@ -256,10 +256,10 @@ if [ -d "$ANTISMASH_DB_DIR" ]; then
     if [ -d "$ANTISMASH_DB_DIR/pfam" ] || [ -n "$(ls -A "$ANTISMASH_DB_DIR" 2>/dev/null)" ]; then
         print_status "antiSMASH" "READY"
     else
-        print_status "antiSMASH" "MISSING" "Directory is empty. Run: pixi run download-db-secondary-metabolites"
+        print_status "antiSMASH" "MISSING" "Directory is empty. Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-secondary-metabolites"
     fi
 else
-    print_status "antiSMASH" "MISSING" "Run: pixi run download-db-secondary-metabolites"
+    print_status "antiSMASH" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-secondary-metabolites"
 fi
 
 # 12. BAGEL4
@@ -267,17 +267,17 @@ if [ -d "$BAGEL4_DIR" ] && [ -d "$BAGEL4_DB_DIR" ]; then
     if [ -f "$BAGEL4_DIR/bagel4_wrapper.pl" ] && [ -f "$BAGEL4_DB_DIR/Pfam-A.hmm" ] && [ -f "$BAGEL4_DB_DIR/Pfam-A.hmm.h3m" ]; then
         print_status "BAGEL4" "READY"
     else
-        print_status "BAGEL4" "MISSING" "Codebase or Pfam-A databases missing/unindexed. Run: pixi run download-db-secondary-metabolites"
+        print_status "BAGEL4" "MISSING" "Codebase or Pfam-A databases missing/unindexed. Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-secondary-metabolites"
     fi
 else
-    print_status "BAGEL4" "MISSING" "Run: pixi run download-db-secondary-metabolites"
+    print_status "BAGEL4" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-secondary-metabolites"
 fi
 
 # 13. RGI (CARD)
 if [ -d "$RGI_DB_DIR" ] && [ -f "$RGI_DB_DIR/card.json" ]; then
     print_status "RGI" "READY"
 else
-    print_status "RGI" "MISSING" "Run: pixi run download-db-amr-virulence"
+    print_status "RGI" "MISSING" "Run: pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-amr-virulence"
 fi
 
 echo -e "======================================================================"

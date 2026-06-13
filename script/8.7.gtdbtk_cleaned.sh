@@ -35,7 +35,7 @@ fi
 # --- STEP 2: Run GTDB-Tk (Taxonomy Classification) ---
 echo "Starting GTDB-Tk Classify Workflow on cleaned assemblies..."
 
-pixi run -e taxonomy gtdbtk classify_wf \
+pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy gtdbtk classify_wf \
     --genome_dir "$COLLECTED_DIR" \
     --out_dir "$GTDB_OUT_DIR" \
     --extension fasta \

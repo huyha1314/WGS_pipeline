@@ -78,7 +78,7 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
 
     # Run SSPACE via Pixi
     echo "🧬 Running SSPACE..."
-    pixi run -e sspace SSPACE_Basic.pl \
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e sspace SSPACE_Basic.pl \
         -l "library.txt" \
         -s "contigs.fa" \
         -x 0 -m 32 -k 5 -a 0.7 \

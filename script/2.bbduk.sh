@@ -25,10 +25,10 @@ process_qc_bt2() {
     local bt2_out2="$RESULT_DIR/bowtie2/nohuman.${sample}.fq.2.gz"
 
     # --- Step 1: BBDuk quality filtering ---
-    if [[ ! -f "$trim_out1" || ! -f "$trim_out2" ]] || ! pixi run -e default gzip -t "$trim_out1" &>/dev/null || ! pixi run -e default gzip -t "$trim_out2" &>/dev/null; then
+    if [[ ! -f "$trim_out1" || ! -f "$trim_out2" ]] || ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e default gzip -t "$trim_out1" &>/dev/null || ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e default gzip -t "$trim_out2" &>/dev/null; then
         echo "[$sample] Running BBDuk (output missing or corrupted)..."
         rm -f "$trim_out1" "$trim_out2"
-        if pixi run -e qc bbduk.sh \
+        if pixi run --manifest-path "$WORKDIR/pixi.toml" -e qc bbduk.sh \
             in1="$r1_in" \
             in2="$r2_in" \
             out1="$trim_out1" \
@@ -46,10 +46,10 @@ process_qc_bt2() {
     fi
 
     # --- Step 2: Remove human reads with Bowtie2 ---
-    if [[ ! -f "$bt2_out1" || ! -f "$bt2_out2" ]] || ! pixi run -e default gzip -t "$bt2_out1" &>/dev/null || ! pixi run -e default gzip -t "$bt2_out2" &>/dev/null; then
+    if [[ ! -f "$bt2_out1" || ! -f "$bt2_out2" ]] || ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e default gzip -t "$bt2_out1" &>/dev/null || ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e default gzip -t "$bt2_out2" &>/dev/null; then
         echo "[$sample] Running Bowtie2 to filter human reads (output missing or corrupted)..."
         rm -f "$bt2_out1" "$bt2_out2" "$RESULT_DIR/bowtie2/nohuman.${sample}.sam"
-        if pixi run -e assembly bowtie2 \
+        if pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly bowtie2 \
             --threads "$THREADS_PER_QC_BT2" \
             -x "$BOWTIE2_INDEX" \
             -1 "$trim_out1" \
@@ -77,7 +77,7 @@ process_kraken() {
     # Since Bowtie2 already filters out host (human) reads, running Kraken2 and extract_kraken_reads.py
     # to exclude human (taxid 9606) is completely redundant.
     # We bypass Kraken2 here to save massive memory (120GB+ RAM), CPU, and processing time.
-    if [[ ! -f "$final_out1" || ! -f "$final_out2" ]] || ! pixi run -e default gzip -t "$final_out1" &>/dev/null || ! pixi run -e default gzip -t "$final_out2" &>/dev/null; then
+    if [[ ! -f "$final_out1" || ! -f "$final_out2" ]] || ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e default gzip -t "$final_out1" &>/dev/null || ! pixi run --manifest-path "$WORKDIR/pixi.toml" -e default gzip -t "$final_out2" &>/dev/null; then
         echo "[$sample] Creating clean reads directly from Bowtie2 output (bypassing redundant Kraken2 host-filtering)..."
         rm -f "$final_out1" "$final_out2"
         
@@ -102,7 +102,7 @@ process_kraken() {
     if [[ ! -f "$kraken_output" || ! -f "$kraken_report" ]]; then
         echo "[$sample] Running Kraken2..."
         rm -f "$kraken_output" "$kraken_report"
-        if pixi run -e tree kraken2 \
+        if pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree kraken2 \
             --db "$KRAKEN2_DB_PATH" \
             --paired "$bt2_out1" "$bt2_out2" \
             --threads "$THREADS_PER_KRAKEN" \
@@ -122,7 +122,7 @@ process_kraken() {
     if [[ ! -f "$final_out1" || ! -f "$final_out2" ]]; then
         echo "[$sample] Extracting reads..."
         rm -f "$raw_out1" "$raw_out2" "$final_out1" "$final_out2"
-        if pixi run -e tree extract_kraken_reads.py \
+        if pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree extract_kraken_reads.py \
             -k "$kraken_output" \
             -r "$kraken_report" \
             -s "$bt2_out1" \
@@ -132,8 +132,8 @@ process_kraken() {
             -t 9606 --include-parents --exclude --fastq-output; then
             
             echo "[$sample] Compressing final reads..."
-            if pixi run -e default pigz -p 8 -f "$raw_out1" && \
-               pixi run -e default pigz -p 8 -f "$raw_out2"; then
+            if pixi run --manifest-path "$WORKDIR/pixi.toml" -e default pigz -p 8 -f "$raw_out1" && \
+               pixi run --manifest-path "$WORKDIR/pixi.toml" -e default pigz -p 8 -f "$raw_out2"; then
                 echo "[$sample] Read extraction and compression complete."
             else
                 echo "ERROR: pigz compression failed for $sample"
@@ -178,7 +178,7 @@ done < "$INPUT_SHEET"
 # --- Run Stage 1 (QC & BT2) in parallel ---
 if [[ -s "$CMD_FILE_QC" ]]; then
     echo "Running parallel processing for bbduk and bowtie2 (Jobs: $PARALLEL_JOBS_QC_BT2)..."
-    cat "$CMD_FILE_QC" | pixi run parallel -j "$PARALLEL_JOBS_QC_BT2"
+    cat "$CMD_FILE_QC" | pixi run --manifest-path "$WORKDIR/pixi.toml" parallel -j "$PARALLEL_JOBS_QC_BT2"
 else
     echo "No QC/BT2 commands to run."
 fi
@@ -186,7 +186,7 @@ fi
 # --- Run Stage 2 (Kraken2 & Extraction) sequentially or with limited concurrency ---
 if [[ -s "$CMD_FILE_KRAKEN" ]]; then
     echo "Running parallel processing for kraken2 (Jobs: $PARALLEL_JOBS_KRAKEN)..."
-    cat "$CMD_FILE_KRAKEN" | pixi run parallel -j "$PARALLEL_JOBS_KRAKEN"
+    cat "$CMD_FILE_KRAKEN" | pixi run --manifest-path "$WORKDIR/pixi.toml" parallel -j "$PARALLEL_JOBS_KRAKEN"
 else
     echo "No Kraken2 commands to run."
 fi

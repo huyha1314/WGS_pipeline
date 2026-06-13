@@ -57,11 +57,11 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
 
         echo "[$SAMPLE] Decompressing reads for MEGAHIT..."
         rm -f "$temp_fq1" "$temp_fq2"
-        if pixi run -e default pigz -d -c "$in1" > "$temp_fq1" && \
-           pixi run -e default pigz -d -c "$in2" > "$temp_fq2"; then
+        if pixi run --manifest-path "$WORKDIR/pixi.toml" -e default pigz -d -c "$in1" > "$temp_fq1" && \
+           pixi run --manifest-path "$WORKDIR/pixi.toml" -e default pigz -d -c "$in2" > "$temp_fq2"; then
             
             echo "[$SAMPLE] Decompression complete. Launching MEGAHIT..."
-            if pixi run -e assembly megahit \
+            if pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly megahit \
                 -1 "$temp_fq1" \
                 -2 "$temp_fq2" \
                 -o "$outdir/megahit_out" \
@@ -88,7 +88,7 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
 
     elif [[ "$ASSEMBLER" == "spades" ]]; then
         echo "[$SAMPLE] Launching SPAdes..."
-        if pixi run -e assembly spades.py \
+        if pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly spades.py \
             -1 "$in1" \
             -2 "$in2" \
             -o "$outdir/spades_out" \
@@ -107,7 +107,7 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
     elif [[ "$ASSEMBLER" == "flye" ]]; then
         echo "[$SAMPLE] Launching Flye..."
         # Flye is a long-read assembler. As a fallback, we assume clean.fq.gz contains reads.
-        if pixi run -e assembly flye \
+        if pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly flye \
             --nano-hq "$in1" \
             -o "$outdir/flye_out" \
             -t "$CPUS_MED" &> "$RESULT_DIR/assembly/${SAMPLE}.flye.log"; then

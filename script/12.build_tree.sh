@@ -66,7 +66,7 @@ if [ ! -s "$INPUT_LIST" ]; then
 
     if [ -f "$GTDB_CLASSIFY_TREE" ]; then
         mkdir -p "$(dirname "$INPUT_LIST")"
-        pixi run -e tree python3 "$SCRIPT_DIR/python.find_tax.py" \
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree python3 "$SCRIPT_DIR/python.find_tax.py" \
             -i "$GTDB_CLASSIFY_TREE" \
             -t "$FIRST_SAMPLE" \
             -o "$INPUT_LIST" \
@@ -102,7 +102,7 @@ else
     while [ $count -lt $MAX_RETRIES ]; do
         echo "Download attempt $((count+1)) of $MAX_RETRIES..."
         
-        pixi run -e tree datasets download genome accession \
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree datasets download genome accession \
             --inputfile "$WORK_DIR/clean_accessions.txt" \
             --include genome \
             --filename "$WORK_DIR/ncbi_dataset.zip"
@@ -146,7 +146,7 @@ echo "=== 5. Extracting Marker Genes (GTDB-Tk) ==="
 if [ -d "$WORK_DIR/gtdbtk_out/identify" ]; then
     echo " -> Skipping: GTDB-Tk identify directory already exists."
 else
-    pixi run -e taxonomy gtdbtk identify \
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy gtdbtk identify \
         --genome_dir "$WORK_DIR/genomes" \
         --out_dir "$WORK_DIR/gtdbtk_out" \
         --extension fasta \
@@ -158,7 +158,7 @@ echo "=== 6. Aligning Marker Genes (GTDB-Tk) ==="
 if [ -d "$WORK_DIR/gtdbtk_out/align" ]; then
     echo " -> Skipping: GTDB-Tk align directory already exists."
 else
-    pixi run -e taxonomy gtdbtk align \
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e taxonomy gtdbtk align \
         --identify_dir "$WORK_DIR/gtdbtk_out" \
         --out_dir "$WORK_DIR/gtdbtk_out" \
         --cpus "$THREADS"
@@ -174,7 +174,7 @@ else
         msa_file="$WORK_DIR/gtdbtk_out/align/gtdbtk.bac120.user_msa.fasta.gz"
     fi
     
-    pixi run -e tree iqtree \
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree iqtree \
         -s "$msa_file" \
         -m TEST \
         -B 1000 \
@@ -187,11 +187,11 @@ if [ -f "$WORK_DIR/${BATCH_NAME}_annotated_tree.treefile" ]; then
     echo " -> Skipping: Annotated tree already exists."
 else
     # Save the raw JSON output directly, ignoring the broken dataformat tool
-    pixi run -e tree datasets summary genome accession \
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree datasets summary genome accession \
         --inputfile "$WORK_DIR/clean_accessions.txt" > "$WORK_DIR/taxonomy_summary.json"
 
     # Use Python to safely parse the JSON and rename the tree branches
-    pixi run -e default python3 -c '
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e default python3 -c '
 import sys
 import json
 

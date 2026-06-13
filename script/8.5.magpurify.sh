@@ -34,7 +34,7 @@ echo "====================================================="
 # Check database
 if [[ ! -d "$MAGPURIFYDB" || ! -d "$MAGPURIFYDB/clade-markers" ]]; then
     echo "ERROR: MAGpurify database not found at $MAGPURIFYDB."
-    echo "Please run 'pixi run download-db-magpurify' first."
+    echo "Please run 'pixi run --manifest-path "$WORKDIR/pixi.toml" download-db-magpurify' first."
     exit 1
 fi
 
@@ -56,7 +56,7 @@ for mag_path in "$COLLECTED_DIR"/*.fasta; do
     
     # 1. Flag contigs with conflicting phylogenetic marker genes
     echo " -> Running phylo-markers..."
-    pixi run -e magpurify magpurify phylo-markers "$mag_path" "$tmp_out_dir"
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e magpurify magpurify phylo-markers "$mag_path" "$tmp_out_dir"
     if [ $? -ne 0 ]; then
         echo "ERROR: MAGpurify phylo-markers failed on $mag_name!"
         exit 1
@@ -64,7 +64,7 @@ for mag_path in "$COLLECTED_DIR"/*.fasta; do
     
     # 2. Flag contigs with conflicting clade-specific markers
     echo " -> Running clade-markers..."
-    pixi run -e magpurify magpurify clade-markers "$mag_path" "$tmp_out_dir"
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e magpurify magpurify clade-markers "$mag_path" "$tmp_out_dir"
     if [ $? -ne 0 ]; then
         echo "ERROR: MAGpurify clade-markers failed on $mag_name!"
         exit 1
@@ -72,7 +72,7 @@ for mag_path in "$COLLECTED_DIR"/*.fasta; do
     
     # 3. Flag contigs with weird tetranucleotide frequencies
     echo " -> Running tetra-freq..."
-    pixi run -e magpurify magpurify tetra-freq "$mag_path" "$tmp_out_dir"
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e magpurify magpurify tetra-freq "$mag_path" "$tmp_out_dir"
     if [ $? -ne 0 ]; then
         echo "ERROR: MAGpurify tetra-freq failed on $mag_name!"
         exit 1
@@ -80,7 +80,7 @@ for mag_path in "$COLLECTED_DIR"/*.fasta; do
     
     # 4. Flag contigs with outlier GC content
     echo " -> Running gc-content..."
-    pixi run -e magpurify magpurify gc-content "$mag_path" "$tmp_out_dir"
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e magpurify magpurify gc-content "$mag_path" "$tmp_out_dir"
     if [ $? -ne 0 ]; then
         echo "ERROR: MAGpurify gc-content failed on $mag_name!"
         exit 1
@@ -88,7 +88,7 @@ for mag_path in "$COLLECTED_DIR"/*.fasta; do
     
     # 5. Flag known contaminants
     echo " -> Running known-contam..."
-    pixi run -e magpurify magpurify known-contam "$mag_path" "$tmp_out_dir"
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e magpurify magpurify known-contam "$mag_path" "$tmp_out_dir"
     if [ $? -ne 0 ]; then
         echo "ERROR: MAGpurify known-contam failed on $mag_name!"
         exit 1
@@ -97,7 +97,7 @@ for mag_path in "$COLLECTED_DIR"/*.fasta; do
     # Clean output FASTA
     cleaned_path="$REFINED_DIR/${mag_name}_cleaned.fasta"
     echo " -> Generating cleaned bin: $cleaned_path..."
-    pixi run -e magpurify magpurify clean-bin "$mag_path" "$tmp_out_dir" "$cleaned_path"
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e magpurify magpurify clean-bin "$mag_path" "$tmp_out_dir" "$cleaned_path"
     if [ $? -ne 0 ]; then
         echo "ERROR: MAGpurify clean-bin failed on $mag_name!"
         exit 1

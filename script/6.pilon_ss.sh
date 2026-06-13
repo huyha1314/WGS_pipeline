@@ -53,22 +53,22 @@ while IFS=$'\t' read -r SAMPLE R1_PATH R2_PATH; do
     # Index the scaffolds (if missing)
     if [[ ! -f "${scaffold_in}.bwt" ]]; then
         echo "--- Indexing Scaffolds for $SAMPLE ---"
-        pixi run -e assembly bwa index "$scaffold_in"
-        pixi run -e assembly samtools faidx "$scaffold_in"
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly bwa index "$scaffold_in"
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools faidx "$scaffold_in"
     fi
 
     # Align reads to scaffolds
     echo "--- Aligning reads to scaffolds for $SAMPLE ---"
     # Using 30 threads for BWA mem + 10 threads for samtools sort = 40 CPUs total
-    pixi run -e assembly bwa mem -t 30 "$scaffold_in" "$fq1" "$fq2" | \
-        pixi run -e assembly samtools sort -@ 10 -m 4G -o "${workdir}/${SAMPLE}_scaffold.sorted.bam" -
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly bwa mem -t 30 "$scaffold_in" "$fq1" "$fq2" | \
+        pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools sort -@ 10 -m 4G -o "${workdir}/${SAMPLE}_scaffold.sorted.bam" -
     
-    pixi run -e assembly samtools index "${workdir}/${SAMPLE}_scaffold.sorted.bam"
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly samtools index "${workdir}/${SAMPLE}_scaffold.sorted.bam"
 
     # Run Pilon (Round 2)
     echo "--- Running Pilon Round 2 for $SAMPLE ---"
     # Set heap memory to 200G (configured for 250G RAM node)
-    pixi run -e assembly pilon \
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e assembly pilon \
         --genome "$scaffold_in" \
         --frags "${workdir}/${SAMPLE}_scaffold.sorted.bam" \
         --output "${SAMPLE}_final_polished" \

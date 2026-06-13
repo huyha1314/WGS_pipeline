@@ -16,7 +16,7 @@ for i1 in "$RESULT_DIR/fastp"/*_1.fq.gz; do
     i2=${i1/_1.fq.gz/_2.fq.gz}
     echo "Processing sample: $sample"
     # Run Kraken2
-    pixi run -e tree kraken2 \
+    pixi run --manifest-path "$WORKDIR/pixi.toml" -e tree kraken2 \
         --db "$KRAKEN2_DB_PATH" \
         --threads 20 \
         --report "$RESULT_DIR/k2_as/${sample}.report.txt" \
